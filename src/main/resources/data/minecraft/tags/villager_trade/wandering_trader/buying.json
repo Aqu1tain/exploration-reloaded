@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "fixed-exploration:wandering_trader/golden_carrot_emerald",
+    "fixed-exploration:wandering_trader/pumpkin_pie_emerald",
+    "fixed-exploration:wandering_trader/beetroot_soup_emerald",
+    "fixed-exploration:wandering_trader/compass_emerald",
+    "fixed-exploration:wandering_trader/lead_emerald",
+    "fixed-exploration:wandering_trader/cookie_emerald"
+  ]
+}

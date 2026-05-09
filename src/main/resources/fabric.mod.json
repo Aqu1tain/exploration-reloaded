@@ -1,0 +1,24 @@
+{
+    "schemaVersion": 1,
+    "id": "fixed-exploration",
+    "version": "${version}",
+    "name": "Fixed Exploration",
+    "description": "Exploration maps, structure spacing tweaks, and wandering trader improvements extracted from Fixed Minecraft.",
+    "authors": ["Aqu1tain"],
+    "contributors": ["green_jab"],
+    "contact": {
+        "sources": "https://github.com/Aqu1tain/fixed-exploration"
+    },
+    "license": "CC-BY-NC-SA-4.0",
+    "environment": "*",
+    "entrypoints": {
+        "main": ["com.akitain.fixedexploration.FixedExploration"]
+    },
+    "mixins": ["fixed-exploration.mixins.json"],
+    "depends": {
+        "fabricloader": ">=0.19.0",
+        "minecraft": "~26.1",
+        "java": ">=25",
+        "fabric-api": "*"
+    }
+}
