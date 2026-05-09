@@ -1,7 +1,7 @@
-package com.akitain.fixedexploration.world.loot;
+package com.akitain.explorationreloaded.world.loot;
 
-import com.akitain.fixedexploration.registry.ExplorationRegistries;
-import com.akitain.fixedexploration.registry.ExplorationTags;
+import com.akitain.explorationreloaded.registry.ExplorationRegistries;
+import com.akitain.explorationreloaded.registry.ExplorationTags;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

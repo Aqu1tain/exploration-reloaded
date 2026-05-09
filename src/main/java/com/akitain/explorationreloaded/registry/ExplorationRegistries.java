@@ -1,7 +1,7 @@
-package com.akitain.fixedexploration.registry;
+package com.akitain.explorationreloaded.registry;
 
-import com.akitain.fixedexploration.FixedExploration;
-import com.akitain.fixedexploration.world.loot.ExplorationCompassFunction;
+import com.akitain.explorationreloaded.ExplorationReloaded;
+import com.akitain.explorationreloaded.world.loot.ExplorationCompassFunction;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -28,8 +28,8 @@ public final class ExplorationRegistries {
     }
 
     private static Holder<MapDecorationType> mapDecoration(String name, int color) {
-        ResourceKey<MapDecorationType> key = ResourceKey.create(BuiltInRegistries.MAP_DECORATION_TYPE.key(), FixedExploration.id(name));
-        Identifier assetId = FixedExploration.id(name);
+        ResourceKey<MapDecorationType> key = ResourceKey.create(BuiltInRegistries.MAP_DECORATION_TYPE.key(), ExplorationReloaded.id(name));
+        Identifier assetId = ExplorationReloaded.id(name);
         return Registry.registerForHolder(
                 BuiltInRegistries.MAP_DECORATION_TYPE,
                 key,
@@ -38,6 +38,6 @@ public final class ExplorationRegistries {
     }
 
     private static void lootFunction(String name, MapCodec<? extends LootItemFunction> codec) {
-        Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, FixedExploration.id(name), codec);
+        Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, ExplorationReloaded.id(name), codec);
     }
 }

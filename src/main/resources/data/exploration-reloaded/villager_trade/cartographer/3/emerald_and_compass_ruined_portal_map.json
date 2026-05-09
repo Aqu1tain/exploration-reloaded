@@ -4,8 +4,8 @@
   },
   "given_item_modifiers": [
     {
-      "decoration": "fixed-exploration:ruined_portal",
-      "destination": "fixed-exploration:on_ruined_portal_maps",
+      "decoration": "exploration-reloaded:ruined_portal",
+      "destination": "exploration-reloaded:on_ruined_portal_maps",
       "function": "minecraft:exploration_map",
       "search_radius": 100
     },

@@ -1,4 +1,4 @@
-# Fixed Exploration
+# Exploration Reloaded
 
 Fabric mod extracting Fixed Minecraft's exploration-focused changes into a standalone project for Minecraft 26.1.2.
 

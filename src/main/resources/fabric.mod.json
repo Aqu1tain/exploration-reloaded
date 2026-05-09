@@ -1,20 +1,20 @@
 {
     "schemaVersion": 1,
-    "id": "fixed-exploration",
+    "id": "exploration-reloaded",
     "version": "${version}",
-    "name": "Fixed Exploration",
+    "name": "Exploration Reloaded",
     "description": "Exploration maps, structure spacing tweaks, and wandering trader improvements extracted from Fixed Minecraft.",
     "authors": ["Aqu1tain"],
     "contributors": ["green_jab"],
     "contact": {
-        "sources": "https://github.com/Aqu1tain/fixed-exploration"
+        "sources": "https://github.com/Aqu1tain/exploration-reloaded"
     },
     "license": "CC-BY-NC-SA-4.0",
     "environment": "*",
     "entrypoints": {
-        "main": ["com.akitain.fixedexploration.FixedExploration"]
+        "main": ["com.akitain.explorationreloaded.ExplorationReloaded"]
     },
-    "mixins": ["fixed-exploration.mixins.json"],
+    "mixins": ["exploration-reloaded.mixins.json"],
     "depends": {
         "fabricloader": ">=0.19.0",
         "minecraft": "~26.1",

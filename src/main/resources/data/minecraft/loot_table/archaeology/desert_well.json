@@ -16,8 +16,8 @@
                     "type": "minecraft:item",
                     "functions": [
                         {
-                            "destination": "fixed-exploration:on_trail_ruins_maps",
-                            "decoration": "fixed-exploration:trail_ruins",
+                            "destination": "exploration-reloaded:on_trail_ruins_maps",
+                            "decoration": "exploration-reloaded:trail_ruins",
                             "function": "minecraft:exploration_map",
                             "skip_existing_chunks": false,
                             "zoom": 1

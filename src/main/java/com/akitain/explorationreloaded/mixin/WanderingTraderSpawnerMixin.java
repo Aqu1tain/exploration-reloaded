@@ -1,4 +1,4 @@
-package com.akitain.fixedexploration.mixin;
+package com.akitain.explorationreloaded.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;

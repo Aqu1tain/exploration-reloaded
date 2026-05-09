@@ -1,6 +1,6 @@
-package com.akitain.fixedexploration.registry;
+package com.akitain.explorationreloaded.registry;
 
-import com.akitain.fixedexploration.FixedExploration;
+import com.akitain.explorationreloaded.ExplorationReloaded;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.levelgen.structure.Structure;
@@ -15,6 +15,6 @@ public final class ExplorationTags {
     }
 
     private static TagKey<Structure> structure(String name) {
-        return TagKey.create(Registries.STRUCTURE, FixedExploration.id(name));
+        return TagKey.create(Registries.STRUCTURE, ExplorationReloaded.id(name));
     }
 }
