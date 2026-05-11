@@ -2,6 +2,7 @@ package com.akitain.explorationreloaded;
 
 import com.akitain.explorationreloaded.registry.ExplorationRegistries;
 import com.akitain.explorationreloaded.registry.ExplorationComponents;
+import com.akitain.explorationreloaded.registry.ExplorationItemGroups;
 import com.akitain.explorationreloaded.registry.ExplorationItems;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
@@ -16,6 +17,7 @@ public class ExplorationReloaded implements ModInitializer {
     public void onInitialize() {
         ExplorationComponents.register();
         ExplorationItems.register();
+        ExplorationItemGroups.register();
         ExplorationRegistries.register();
         LOGGER.info("Exploration Reloaded loaded");
     }

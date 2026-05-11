@@ -7,5 +7,6 @@
     "filled_map.ruined_portal": "Ruined Portal Map",
     "filled_map.trail_ruins": "Trail Ruins Map",
     "item.exploration-reloaded.dragon_firework_rocket": "Dragon Firework Rocket",
-    "item.exploration-reloaded.nautilus_armor": "Nautilus Armor"
+    "item.exploration-reloaded.nautilus_armor": "Nautilus Armor",
+    "itemgroup.exploration-reloaded": "Exploration Reloaded"
 }
