@@ -6,7 +6,10 @@
         "ApplyBonusLootFunctionMixin",
         "EyeOfEnderEntityMixin",
         "FishingBobberEntityMixin",
+        "FormCaravanGoalMixin",
         "ItemsMixin",
+        "LlamaEntityMixin",
+        "ParrotEntityMixin",
         "WanderingTraderManagerMixin"
     ],
     "injectors": {
