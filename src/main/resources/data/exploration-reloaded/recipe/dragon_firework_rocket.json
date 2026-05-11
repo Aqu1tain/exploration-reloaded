@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "#$#",
+    "###"
+  ],
+    "key": {
+      "#": "minecraft:firework_rocket",
+      "$": "minecraft:dragon_breath"
+    }
+  ,
+  "result": {
+    "id": "exploration-reloaded:dragon_firework_rocket",
+    "count": 8
+  }
+}
