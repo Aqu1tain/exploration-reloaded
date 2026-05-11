@@ -1,10 +1,13 @@
 package com.akitain.explorationreloaded.registry;
 
 import com.akitain.explorationreloaded.ExplorationReloaded;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.FireworksComponent;
 import net.minecraft.item.FireworkRocketItem;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroups;
+import net.minecraft.item.Items;
 import net.minecraft.item.equipment.ArmorMaterials;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -24,6 +27,8 @@ public final class ExplorationItems {
     }
 
     public static void register() {
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> entries.addAfter(Items.FIREWORK_ROCKET, DRAGON_FIREWORK_ROCKET));
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(entries -> entries.addAfter(Items.TURTLE_HELMET, NAUTILUS_ARMOR));
     }
 
     private static Item register(String name, Item.Settings settings) {
