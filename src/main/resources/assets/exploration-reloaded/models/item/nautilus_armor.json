@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "exploration-reloaded:item/nautilus_armor"
+  }
+}
