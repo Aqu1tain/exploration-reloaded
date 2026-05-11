@@ -2,7 +2,7 @@ package com.akitain.explorationreloaded;
 
 import com.akitain.explorationreloaded.registry.ExplorationRegistries;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.resources.Identifier;
+import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +17,6 @@ public class ExplorationReloaded implements ModInitializer {
     }
 
     public static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(MOD_ID, path);
+        return Identifier.of(MOD_ID, path);
     }
 }

@@ -17,8 +17,8 @@
     "mixins": ["exploration-reloaded.mixins.json"],
     "depends": {
         "fabricloader": ">=0.19.0",
-        "minecraft": "~26.1",
-        "java": ">=25",
+        "minecraft": "1.21.11",
+        "java": ">=17",
         "fabric-api": "*"
     }
 }

@@ -1,9 +1,9 @@
 {
     "required": true,
     "package": "com.akitain.explorationreloaded.mixin",
-    "compatibilityLevel": "JAVA_25",
+    "compatibilityLevel": "JAVA_17",
     "mixins": [
-        "WanderingTraderSpawnerMixin"
+        "WanderingTraderManagerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

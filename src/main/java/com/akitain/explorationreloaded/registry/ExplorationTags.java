@@ -1,9 +1,9 @@
 package com.akitain.explorationreloaded.registry;
 
 import com.akitain.explorationreloaded.ExplorationReloaded;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.TagKey;
+import net.minecraft.world.gen.structure.Structure;
 
 public final class ExplorationTags {
     public static final TagKey<Structure> LODESTONE_COMPASS = structure("lodestone_compass");
@@ -15,6 +15,6 @@ public final class ExplorationTags {
     }
 
     private static TagKey<Structure> structure(String name) {
-        return TagKey.create(Registries.STRUCTURE, ExplorationReloaded.id(name));
+        return TagKey.of(RegistryKeys.STRUCTURE, ExplorationReloaded.id(name));
     }
 }
