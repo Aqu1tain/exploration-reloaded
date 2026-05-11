@@ -3,6 +3,9 @@
     "package": "com.akitain.explorationreloaded.mixin",
     "compatibilityLevel": "JAVA_17",
     "mixins": [
+        "ApplyBonusLootFunctionMixin",
+        "FishingBobberEntityMixin",
+        "ItemsMixin",
         "WanderingTraderManagerMixin"
     ],
     "injectors": {

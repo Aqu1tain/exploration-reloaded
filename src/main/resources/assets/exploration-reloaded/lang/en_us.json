@@ -1,4 +1,5 @@
 {
+    "component.exploration-reloaded.bait": "Bait Power: %s",
     "filled_map.explorer": "%s Explorer Map",
     "filled_map.outpost": "Pillager Outpost Map",
     "filled_map.ruined_portal": "Ruined Portal Map",
