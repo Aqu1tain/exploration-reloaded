@@ -21,6 +21,7 @@ public final class ExplorationItems {
     public static final Item DRAGON_FIREWORK_ROCKET = register("dragon_firework_rocket", FireworkRocketItem::new, new Item.Settings()
             .useCooldown(1.0F)
             .component(DataComponentTypes.FIREWORKS, new FireworksComponent(1, List.of())));
+    public static final Item CHAINMAIL_HORSE_ARMOR = register("chainmail_horse_armor", new Item.Settings().horseArmor(ArmorMaterials.CHAIN));
     public static final Item NAUTILUS_ARMOR = register("nautilus_armor", new Item.Settings().nautilusArmor(ArmorMaterials.ARMADILLO_SCUTE));
 
     private ExplorationItems() {
@@ -28,6 +29,7 @@ public final class ExplorationItems {
 
     public static void register() {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> entries.addAfter(Items.FIREWORK_ROCKET, DRAGON_FIREWORK_ROCKET));
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(entries -> entries.addAfter(Items.LEATHER_HORSE_ARMOR, CHAINMAIL_HORSE_ARMOR));
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(entries -> entries.addAfter(Items.TURTLE_HELMET, NAUTILUS_ARMOR));
     }
 
