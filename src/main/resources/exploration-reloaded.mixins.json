@@ -8,6 +8,7 @@
         "AbstractHorseEntityMixin",
         "ApplyBonusLootFunctionMixin",
         "BiomeSourceMixin",
+        "CauldronBehaviorMixin",
         "map_book.CartographyTableScreenHandlerMixin",
         "map_book.FilledMapItemMixin",
         "map_book.MapBannerMarkerMixin",
