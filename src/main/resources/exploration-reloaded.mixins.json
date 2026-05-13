@@ -26,6 +26,7 @@
         "ServerPlayNetworkHandlerMixin",
         "SkeletonHorseEntityMixin",
         "WanderingTraderManagerMixin",
+        "WanderingTraderEntityTradeMixin",
         "ZombieHorseEntityMixin",
         "ZombieSiegeManagerMixin"
     ],
