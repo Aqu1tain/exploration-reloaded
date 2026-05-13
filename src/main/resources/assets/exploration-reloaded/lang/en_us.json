@@ -8,5 +8,10 @@
     "filled_map.trail_ruins": "Trail Ruins Map",
     "item.exploration-reloaded.chainmail_horse_armor": "Chainmail Horse Armor",
     "item.exploration-reloaded.dragon_firework_rocket": "Dragon Firework Rocket",
+    "item.exploration-reloaded.map_book": "Map Book",
+    "item.exploration-reloaded.map_book_empty": "Empty Map Book",
+    "item.exploration-reloaded.map_book_id": "Book: %s",
+    "item.exploration-reloaded.map_book_maps": "Maps: %s",
+    "item.exploration-reloaded.map_book_new": "New Map Book",
     "item.exploration-reloaded.nautilus_armor": "Nautilus Armor"
 }

@@ -11,6 +11,15 @@ base {
 }
 
 loom {
+    splitEnvironmentSourceSets()
+    accessWidenerPath = file("src/main/resources/exploration-reloaded.accesswidener")
+    mods {
+        register("exploration-reloaded") {
+            sourceSet(sourceSets["main"])
+            sourceSet(sourceSets["client"])
+        }
+    }
+
     runs {
         client {
             client()

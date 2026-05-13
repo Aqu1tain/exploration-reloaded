@@ -8,6 +8,13 @@
         "AbstractHorseEntityMixin",
         "ApplyBonusLootFunctionMixin",
         "BiomeSourceMixin",
+        "map_book.CartographyTableScreenHandlerMixin",
+        "map_book.FilledMapItemMixin",
+        "map_book.MapBannerMarkerMixin",
+        "map_book.MapDecorationMixin",
+        "map_book.MapIdComponentMixin",
+        "map_book.MapStateMixin",
+        "map_book.ServerWaypointHandlerMixin",
         "CartographerTradeOffersMixin",
         "ElytraFluidRestrictionMixin",
         "EnderPearlEntityMixin",
@@ -28,7 +35,8 @@
         "WanderingTraderManagerMixin",
         "WanderingTraderEntityTradeMixin",
         "ZombieHorseEntityMixin",
-        "ZombieSiegeManagerMixin"
+        "ZombieSiegeManagerMixin",
+        "util.MinecraftServerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

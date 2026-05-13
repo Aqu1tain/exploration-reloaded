@@ -1,0 +1,16 @@
+{
+    "required": true,
+    "package": "com.akitain.explorationreloaded.mixin.client.map",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "HeldItemRendererMixin",
+        "InGameHudMixin",
+        "ItemFrameEntityRendererMixin",
+        "LocatorBarMixin",
+        "MapPositionRequestMixin",
+        "MapRendererMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}
