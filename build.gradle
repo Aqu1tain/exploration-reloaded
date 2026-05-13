@@ -23,6 +23,7 @@ loom {
     runs {
         client {
             client()
+            source = sourceSets.client
             setConfigName("Minecraft Client")
             ideConfigGenerated(true)
             runDir("run")
