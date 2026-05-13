@@ -8,6 +8,11 @@ Fabric mod extracting Fixed Minecraft's exploration-focused changes into a stand
 - Exploration maps in selected loot tables and cartographer trades.
 - Map Book item and map UI extracted from Fixed Minecraft.
 - Wandering trader buying trades from Fixed Minecraft's trader changes.
+- Fixed Minecraft fishing loot pools and bait behavior.
+- Sniffer dig loot expansion and related husbandry advancements.
+- Dragon Firework Rocket requirement for Elytra boosting, plus underwater Elytra restriction.
+- Horse, nautilus, parrot, llama, and caravan travel changes.
+- Ghast harness recipes and Nether fortress harness loot.
 - Custom map decorations for outposts, ruined portals, and trail ruins.
 - Trail ruins exploration compass loot function.
 

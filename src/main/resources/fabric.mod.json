@@ -3,7 +3,7 @@
     "id": "exploration-reloaded",
     "version": "${version}",
     "name": "Exploration Reloaded",
-    "description": "Exploration maps, structure spacing tweaks, and wandering trader improvements extracted from Fixed Minecraft.",
+    "description": "Exploration maps, Map Book, travel mobs, fishing, sniffer loot, and traversal tweaks extracted from Fixed Minecraft.",
     "authors": ["Aqu1tain"],
     "contributors": ["green_jab"],
     "contact": {
