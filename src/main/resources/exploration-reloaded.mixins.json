@@ -10,6 +10,7 @@
         "BiomeSourceMixin",
         "CartographerTradeOffersMixin",
         "ElytraFluidRestrictionMixin",
+        "EnderPearlEntityMixin",
         "EntityMixin",
         "EyeOfEnderEntityMixin",
         "FishingBobberEntityMixin",
@@ -22,9 +23,11 @@
         "LodestoneTrackerComponentMixin",
         "LlamaEntityMixin",
         "ParrotEntityMixin",
+        "ServerPlayNetworkHandlerMixin",
         "SkeletonHorseEntityMixin",
         "WanderingTraderManagerMixin",
-        "ZombieHorseEntityMixin"
+        "ZombieHorseEntityMixin",
+        "ZombieSiegeManagerMixin"
     ],
     "injectors": {
         "defaultRequire": 1
