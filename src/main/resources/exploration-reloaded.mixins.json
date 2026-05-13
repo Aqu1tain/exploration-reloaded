@@ -18,6 +18,7 @@
         "map_book.ServerWaypointHandlerMixin",
         "CartographerTradeOffersMixin",
         "ElytraFluidRestrictionMixin",
+        "EndCityGeneratorPieceMixin",
         "EnderPearlEntityMixin",
         "EntityMixin",
         "EyeOfEnderEntityMixin",
