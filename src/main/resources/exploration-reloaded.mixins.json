@@ -3,17 +3,25 @@
     "package": "com.akitain.explorationreloaded.mixin",
     "compatibilityLevel": "JAVA_17",
     "mixins": [
+        "AbstractBoatEntityMixin",
+        "AbstractDonkeyEntityMixin",
+        "AbstractHorseEntityMixin",
         "ApplyBonusLootFunctionMixin",
         "ElytraFluidRestrictionMixin",
+        "EntityMixin",
         "EyeOfEnderEntityMixin",
         "FishingBobberEntityMixin",
         "FireworkRocketItemMixin",
         "FormCaravanGoalMixin",
+        "HorseLivingEntityMixin",
         "ItemSettingsMixin",
         "ItemsMixin",
+        "LeavesBlockMixin",
         "LlamaEntityMixin",
         "ParrotEntityMixin",
-        "WanderingTraderManagerMixin"
+        "SkeletonHorseEntityMixin",
+        "WanderingTraderManagerMixin",
+        "ZombieHorseEntityMixin"
     ],
     "injectors": {
         "defaultRequire": 1
