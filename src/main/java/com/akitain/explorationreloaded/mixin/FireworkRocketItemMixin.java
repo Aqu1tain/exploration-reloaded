@@ -28,6 +28,10 @@ public class FireworkRocketItemMixin {
             cir.setReturnValue(ActionResult.FAIL);
             return;
         }
+        if (itemStack.isOf(ExplorationItems.DRAGON_FIREWORK_ROCKET) && world.hasRain(user.getBlockPos())) {
+            cir.setReturnValue(ActionResult.FAIL);
+            return;
+        }
         if (user instanceof ServerPlayerEntity serverPlayer && itemStack.isOf(ExplorationItems.DRAGON_FIREWORK_ROCKET)) {
             Criteria.CONSUME_ITEM.trigger(serverPlayer, itemStack);
         }

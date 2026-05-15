@@ -12,7 +12,6 @@ public class ElytraFluidRestrictionMixin {
     @Redirect(method = "canGlide", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;hasStatusEffect(Lnet/minecraft/registry/entry/RegistryEntry;)Z"))
     private boolean blockGlidingInFluids(LivingEntity entity, RegistryEntry<StatusEffect> effect) {
         boolean blocksGliding = entity.hasStatusEffect(effect);
-        boolean weatherBlocksGliding = entity.getEntityWorld().getDifficulty().getId() > 1 && entity.isTouchingWaterOrRain();
-        return blocksGliding || weatherBlocksGliding || entity.isTouchingWater() || entity.isInLava();
+        return blocksGliding || entity.isTouchingWater() || entity.isInLava();
     }
 }
