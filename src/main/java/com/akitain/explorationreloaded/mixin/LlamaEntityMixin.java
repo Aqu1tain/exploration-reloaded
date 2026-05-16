@@ -15,7 +15,7 @@ public abstract class LlamaEntityMixin extends AbstractChestedHorse {
         super(entityType, world);
     }
 
-    @ModifyArg(method = "createChild*", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/animal/equine/Llama;setStrength(I)V"), index = 0)
+    @ModifyArg(method = "getBreedOffspring(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/AgeableMob;)Lnet/minecraft/world/entity/animal/equine/Llama;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/animal/equine/Llama;setStrength(I)V"), index = 0)
     private int inheritStrength(int strength, @Local(ordinal = 1) Llama otherParent) {
         Llama llama = (Llama) (Object) this;
         int inheritedStrength = (llama.getStrength() + otherParent.getStrength()) / 2;
