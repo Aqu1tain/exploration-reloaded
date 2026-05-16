@@ -17,7 +17,7 @@ import net.minecraft.world.entity.animal.equine.ZombieHorse;
 
 @Mixin(ZombieHorse.class)
 public abstract class ZombieHorseEntityMixin {
-    @Inject(method = "randomizeReinforcementsChance", at = @At("TAIL"))
+    @Inject(method = "randomizeAttributes", at = @At("TAIL"))
     private void randomiseAttributes(RandomSource random, CallbackInfo ci) {
         ZombieHorse horse = (ZombieHorse) (Object) this;
         AttributeInstance health = Objects.requireNonNull(horse.getAttribute(Attributes.MAX_HEALTH));

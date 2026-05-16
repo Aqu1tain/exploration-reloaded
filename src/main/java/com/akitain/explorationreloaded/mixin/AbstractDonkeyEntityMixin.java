@@ -29,7 +29,7 @@ public abstract class AbstractDonkeyEntityMixin extends AbstractHorse {
         }
     }
 
-    @Inject(method = "randomizeReinforcementsChance", at = @At("TAIL"))
+    @Inject(method = "randomizeAttributes", at = @At("TAIL"))
     private void randomiseDonkeyAttributes(RandomSource random, CallbackInfo ci) {
         AbstractChestedHorse donkey = (AbstractChestedHorse) (Object) this;
         AttributeInstance jumpStrength = Objects.requireNonNull(donkey.getAttribute(Attributes.JUMP_STRENGTH));
