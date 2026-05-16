@@ -23,6 +23,6 @@ public record MapBookOpenPayload(ItemStack itemStack) implements CustomPacketPay
     }
 
     public static void register() {
-        PayloadTypeRegistry.playS2C().register(PACKET_ID, PACKET_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PACKET_ID, PACKET_CODEC);
     }
 }

@@ -24,7 +24,7 @@ public record MapPositionRequestPayload(MapId mapIdComponent) implements CustomP
     }
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(PACKET_ID, PACKET_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PACKET_ID, PACKET_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, MapPositionRequestPayload::onRequest);
     }
 

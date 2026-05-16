@@ -36,7 +36,7 @@ public record MapBookSyncPayload(int bookID, int[] mapIDs,  ArrayList<MapBookPla
     }
 
     public static void register() {
-        PayloadTypeRegistry.playS2C().register(PACKET_ID, PACKET_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PACKET_ID, PACKET_CODEC);
     }
 
     @Nullable

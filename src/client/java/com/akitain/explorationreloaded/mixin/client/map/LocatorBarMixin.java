@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.contextualbar.LocatorBarRenderer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.WaypointStyle;
@@ -54,12 +54,12 @@ public class LocatorBarMixin {
     @Final
     private static Identifier LOCATOR_BAR_ARROW_UP;
 
-    @Inject(method = "render", at = @At(
+    @Inject(method = "extractRenderState", at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/entity/Entity;level()Lnet/minecraft/world/level/Level;"
     ), cancellable = true
     )
-    private void addBannerMarkers(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci){
+    private void addBannerMarkers(GuiGraphicsExtractor context, DeltaTracker tickCounter, CallbackInfo ci){
         Minecraft client = Minecraft.getInstance();
         int i = getCenterY(client.getWindow());
         assert client.level != null;

@@ -98,7 +98,6 @@ public abstract class WanderingTraderManagerMixin {
             tryToSpawnLlamaFor(world, wanderingTrader, 4);
         }
 
-        serverLevelData.setWanderingTraderId(wanderingTrader.getUUID());
         wanderingTrader.setDespawnDelay(48000);
         wanderingTrader.setWanderTarget(targetPos);
         wanderingTrader.setHomeTo(targetPos, 16);

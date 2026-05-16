@@ -195,7 +195,7 @@ public class MapBookItem extends Item {
                 }
                 if ((slot==EquipmentSlot.MAINHAND||slot==EquipmentSlot.OFFHAND) || ((Player) entity).getOffhandItem() == stack) {
                     for (MapStateData mapStateData : getMapStates(stack, entity.level())) {
-                        mapStateData.mapState.tickCarriedBy(player, stack);
+                        mapStateData.mapState.tickCarriedBy(player, stack, null);
                         if (!mapStateData.mapState.locked) {
                             if (this.getDistanceToEdgeOfMap(mapStateData.mapState, entity.position()) < 128.0) {
                                 ((MapItem)Items.FILLED_MAP ).update(world, entity, mapStateData.mapState);

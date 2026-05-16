@@ -97,7 +97,7 @@ public class FishingBobberEntityMixin {
         int chanceBad = Math.max(40 - chanceGood * 2, 0);
         int chanceMid = Math.max(100 - chanceGood - chanceFish - chanceBad, 0);
 
-        int roll = player.level().random.nextInt(100);
+        int roll = player.level().getRandom().nextInt(100);
         int lootPool = 0;
         if (roll > chanceFish) {
             lootPool = 1;

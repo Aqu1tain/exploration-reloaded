@@ -14,7 +14,7 @@ import java.util.Objects;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -123,7 +123,7 @@ public class MapBookScreen extends Screen {
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
-    @Override public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    @Override public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (context == null) return;
 
         if (scale != targetScale) {
@@ -131,7 +131,7 @@ public class MapBookScreen extends Screen {
             setScale(newScale, mouseX, mouseY);
         }
 
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         Player thisPlayer = minecraft.player;
         if (thisPlayer==null)return;
@@ -164,7 +164,7 @@ public class MapBookScreen extends Screen {
         }
     }
 
-    private void renderPosition(GuiGraphics context, int mouseX, int mouseY) {
+    private void renderPosition(GuiGraphicsExtractor context, int mouseX, int mouseY) {
 
         var pos = new Vec3(mouseX, mouseY, 0.0);
         pos = pos.scale((1/scale));
@@ -180,12 +180,12 @@ public class MapBookScreen extends Screen {
         matrix.pushMatrix();
         matrix.translate((int)((width / 2.0f) -o / 2f), (int)(height -60.0f + 8f));
         context.fill(- 1, - 1, o, 9 , (new Color(50, 50, 50, 150)).hashCode());
-        context.drawString(textRenderer, text, 0, 0, -1, true);
+        context.text(textRenderer, text, 0, 0, -1, true);
         matrix.popMatrix();
 
     }
 
-    private void renderPlayerIcon(GuiGraphics context, MapBookPlayer player, boolean thisPlayer) {
+    private void renderPlayerIcon(GuiGraphicsExtractor context, MapBookPlayer player, boolean thisPlayer) {
         Minecraft minecraftClient = Minecraft.getInstance();
         float x = (float) player.x;
         float z = (float) player.z;
@@ -227,7 +227,7 @@ public class MapBookScreen extends Screen {
         matrix.translate(-o / 2f, 10.0f);
 
         context.fill(- 1, - 1, o, 9, (new Color(50, 50, 50, 150)).hashCode());
-        context.drawString(textRenderer, text, 0, 0, -1, true);
+        context.text(textRenderer, text, 0, 0, -1, true);
         matrix.popMatrix();
 
     }
@@ -250,7 +250,7 @@ public class MapBookScreen extends Screen {
         return color;
     }
 
-    private void renderIcons(GuiGraphics context) {
+    private void renderIcons(GuiGraphicsExtractor context) {
         assert minecraft.level != null;
         for (MapStateData mapStateData : getMapStates(item, minecraft.level)) {
             float render = 0.0f;
@@ -298,7 +298,7 @@ public class MapBookScreen extends Screen {
                             matrix.translate(-o / 2f, 10.0f);
 
                             context.fill(- 1, - 1, o, 9, (new Color(50, 50, 50, 150)).hashCode());
-                            context.drawString(textRenderer, text, 0, 0, -1, true);
+                            context.text(textRenderer, text, 0, 0, -1, true);
                             matrix.popMatrix();
                         }
                     }
@@ -307,7 +307,7 @@ public class MapBookScreen extends Screen {
         }
     }
 
-    private void renderMarker(GuiGraphics context, MapBookPlayer player) {
+    private void renderMarker(GuiGraphicsExtractor context, MapBookPlayer player) {
         float x = (float) player.x;
         float z = (float) player.z;
         float rotation = player.yaw;

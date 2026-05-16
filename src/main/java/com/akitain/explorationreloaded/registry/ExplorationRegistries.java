@@ -12,14 +12,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
-import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 
 public final class ExplorationRegistries {
     public static final Holder<MapDecorationType> OUTPOST = mapDecoration("outpost", MapColor.COLOR_BROWN.col);
     public static final Holder<MapDecorationType> RUINED_PORTAL = mapDecoration("ruined_portal", MapColor.COLOR_PURPLE.col);
     public static final Holder<MapDecorationType> TRAIL_RUINS = mapDecoration("trail_ruins", MapColor.COLOR_LIGHT_GRAY.col);
 
-    public static final LootItemFunctionType<ExplorationCompassFunction> EXPLORATION_COMPASS = lootFunction("exploration_compass", ExplorationCompassFunction.CODEC);
+    public static final MapCodec<ExplorationCompassFunction> EXPLORATION_COMPASS = lootFunction("exploration_compass", ExplorationCompassFunction.CODEC);
 
     private ExplorationRegistries() {
     }
@@ -34,7 +33,7 @@ public final class ExplorationRegistries {
         return Registry.registerForHolder(BuiltInRegistries.MAP_DECORATION_TYPE, key, decorationType);
     }
 
-    private static <T extends LootItemFunction> LootItemFunctionType<T> lootFunction(String name, MapCodec<T> codec) {
-        return Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, ExplorationReloaded.id(name), new LootItemFunctionType<>(codec));
+    private static <T extends LootItemFunction> MapCodec<T> lootFunction(String name, MapCodec<T> codec) {
+        return Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, ExplorationReloaded.id(name), codec);
     }
 }

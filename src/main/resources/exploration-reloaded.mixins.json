@@ -16,7 +16,6 @@
         "map_book.MapIdComponentMixin",
         "map_book.MapStateMixin",
         "map_book.ServerWaypointHandlerMixin",
-        "CartographerTradeOffersMixin",
         "ElytraFluidRestrictionMixin",
         "EndCityGeneratorPieceMixin",
         "EnderPearlEntityMixin",

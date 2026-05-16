@@ -28,6 +28,6 @@ public record MapPositionPayload(MapId mapIdComponent, int centerX, int centerZ)
     }
 
     public static void register() {
-        PayloadTypeRegistry.playS2C().register(PACKET_ID, PACKET_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PACKET_ID, PACKET_CODEC);
     }
 }

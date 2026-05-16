@@ -21,7 +21,7 @@ public class ServerPlayNetworkHandlerMixin {
 
     @WrapOperation(method = "handleMoveVehicle", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V"))
     private void skipClientMoveAfterVehicleTeleport(Entity entity, MoverType movementType, Vec3 movement, Operation<Void> original) {
-        if (!entity.getTags().contains("tp")) {
+        if (!entity.entityTags().contains("tp")) {
             original.call(entity, movementType, movement);
         }
     }

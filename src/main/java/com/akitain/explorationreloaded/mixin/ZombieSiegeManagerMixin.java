@@ -21,7 +21,7 @@ public abstract class ZombieSiegeManagerMixin {
     private void spawnZombieHorse(ServerLevel world, CallbackInfo ci, @Local Zombie zombie) {
         ZombieHorse zombieHorse = EntityType.ZOMBIE_HORSE.create(world, EntitySpawnReason.EVENT);
         zombie.setItemInHand(InteractionHand.MAIN_HAND, Items.STONE_HOE.getDefaultInstance());
-        if (zombieHorse != null && world.random.nextInt(10) == 0) {
+        if (zombieHorse != null && world.getRandom().nextInt(10) == 0) {
             zombie.setItemInHand(InteractionHand.MAIN_HAND, Items.IRON_SPEAR.getDefaultInstance());
             zombie.setItemSlot(EquipmentSlot.HEAD, Items.IRON_HELMET.getDefaultInstance());
             zombieHorse.snapTo(zombie.getX(), zombie.getY(), zombie.getZ(), zombie.getYRot(), 0.0F);

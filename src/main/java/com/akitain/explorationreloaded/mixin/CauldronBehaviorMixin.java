@@ -7,9 +7,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.cauldron.CauldronInteraction;
+import net.minecraft.core.cauldron.CauldronInteractions;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
@@ -22,14 +22,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-@Mixin(CauldronInteraction.class)
-public interface CauldronBehaviorMixin {
+@Mixin(CauldronInteractions.class)
+public abstract class CauldronBehaviorMixin {
     @Shadow
-    CauldronInteraction.InteractionMap WATER = null;
+    public static CauldronInteraction.Dispatcher WATER;
 
     @Inject(method = "bootStrap", at = @At("TAIL"))
     private static void explorationReloaded$registerHarnessCleaning(CallbackInfo ci) {
-        Map<Item, CauldronInteraction> map = WATER.map();
         Item[] coloredHarnesses = {
             Items.LIGHT_GRAY_HARNESS,
             Items.GRAY_HARNESS,
@@ -49,7 +48,7 @@ public interface CauldronBehaviorMixin {
         };
 
         for (Item harness : coloredHarnesses) {
-            map.put(harness, CauldronBehaviorMixin::cleanHarness);
+            WATER.put(harness, CauldronBehaviorMixin::cleanHarness);
         }
     }
 

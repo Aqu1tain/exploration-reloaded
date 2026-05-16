@@ -97,7 +97,7 @@ public class AbstractHorseEntityMixin {
         }
 
         horse.refreshDimensions();
-        if (horse.getTags().contains("locate") && horse.tickCount > 20 * 60 * 5) {
+        if (horse.entityTags().contains("locate") && horse.tickCount > 20 * 60 * 5) {
             horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(0);
             horse.removeTag("locate");
         }

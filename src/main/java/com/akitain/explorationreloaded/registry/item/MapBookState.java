@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import com.akitain.explorationreloaded.network.MapBookPlayer;
 import com.akitain.explorationreloaded.network.MapBookSyncPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.datafix.DataFixTypes;
@@ -30,7 +31,7 @@ public class MapBookState extends SavedData {
 
 
     public static SavedDataType<MapBookState> createStateType(String mapId) {
-        return new SavedDataType<>(mapId, () -> {
+        return new SavedDataType<>(Identifier.withDefaultNamespace(mapId), () -> {
             throw new IllegalStateException("Should never create an empty map saved data");
         }, CODEC, DataFixTypes.SAVED_DATA_MAP_DATA);
     }

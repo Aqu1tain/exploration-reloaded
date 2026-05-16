@@ -2,7 +2,7 @@ package com.akitain.explorationreloaded.registry;
 
 import com.akitain.explorationreloaded.ExplorationReloaded;
 import com.akitain.explorationreloaded.registry.item.MapBookItem;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -29,10 +29,10 @@ public final class ExplorationItems {
     }
 
     public static void register() {
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> entries.addAfter(Items.FIREWORK_ROCKET, DRAGON_FIREWORK_ROCKET));
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> entries.addAfter(Items.MAP, MAP_BOOK));
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.COMBAT).register(entries -> entries.addAfter(Items.LEATHER_HORSE_ARMOR, CHAINMAIL_HORSE_ARMOR));
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.COMBAT).register(entries -> entries.addAfter(Items.TURTLE_HELMET, NAUTILUS_ARMOR));
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> entries.insertAfter(Items.FIREWORK_ROCKET, DRAGON_FIREWORK_ROCKET));
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> entries.insertAfter(Items.MAP, MAP_BOOK));
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> entries.insertAfter(Items.LEATHER_HORSE_ARMOR, CHAINMAIL_HORSE_ARMOR));
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> entries.insertAfter(Items.TURTLE_HELMET, NAUTILUS_ARMOR));
     }
 
     private static Item register(String name, Item.Properties settings) {

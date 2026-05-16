@@ -1,7 +1,7 @@
 package com.akitain.explorationreloaded.map_book;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.world.level.saveddata.maps.MapId;
@@ -23,7 +23,7 @@ public class MapTile implements Renderable {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         float mapScale = (float) Math.pow(2, mapState.scale);
         float offset = 64f * mapScale;
 
@@ -36,7 +36,7 @@ public class MapTile implements Renderable {
                 (float) (mapState.centerX - offset + screen.width / 2.0),
                 (float) (mapState.centerZ - offset + screen.height / 2.0));
         matrix.scale(mapScale, mapScale);
-        context.submitMapRenderState(mapRenderState);
+        context.map(mapRenderState);
         matrix.popMatrix();
     }
 }

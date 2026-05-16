@@ -2,6 +2,7 @@ package com.akitain.explorationreloaded.registry.item;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
@@ -30,7 +31,7 @@ public class MapBookIdCountsState extends SavedData {
         return nextMapBookId;
     }
     public static final SavedDataType<MapBookIdCountsState> persistentStateType = new SavedDataType<>(
-            IDCOUNTS_KEY, MapBookIdCountsState::new, CODEC, DataFixTypes.SAVED_DATA_MAP_INDEX
+            Identifier.withDefaultNamespace(IDCOUNTS_KEY), MapBookIdCountsState::new, CODEC, DataFixTypes.SAVED_DATA_MAP_INDEX
     );
 
 }
