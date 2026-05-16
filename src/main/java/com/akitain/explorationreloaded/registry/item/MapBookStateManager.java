@@ -12,12 +12,12 @@ public class MapBookStateManager {
     private final Map<String, MapBookState> clientMapBooks = new HashMap<>();
 
        public MapBookState getMapBookState(MinecraftServer server, int id) {
-        return server.getOverworld().getPersistentStateManager().get(
+        return server.overworld().getDataStorage().get(
                 MapBookState.createStateType(getMapBookName(id)));
     }
 
     public void putMapBookState(MinecraftServer server, int id, MapBookState state) {
-        server.getOverworld().getPersistentStateManager().set(
+        server.overworld().getDataStorage().set(
                 MapBookState.createStateType(getMapBookName(id)), state);
     }
 

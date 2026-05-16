@@ -1,33 +1,33 @@
 package com.akitain.explorationreloaded.mixin;
 
-import net.minecraft.entity.passive.ParrotEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.animal.parrot.Parrot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ParrotEntity.class)
+@Mixin(Parrot.class)
 public abstract class ParrotEntityMixin {
-    @Inject(method = "interactMob", at = @At("HEAD"), cancellable = true)
-    private void catchParrot(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
-        ItemStack itemStack = player.getStackInHand(hand);
-        ParrotEntity parrot = (ParrotEntity) (Object) this;
-        if (!itemStack.isEmpty() || !parrot.isInAir() || !parrot.isTamed() || !parrot.isOwner(player)) {
+    @Inject(method = "mobInteract", at = @At("HEAD"), cancellable = true)
+    private void catchParrot(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+        ItemStack itemStack = player.getItemInHand(hand);
+        Parrot parrot = (Parrot) (Object) this;
+        if (!itemStack.isEmpty() || !parrot.isFlying() || !parrot.isTame() || !parrot.isOwnedBy(player)) {
             return;
         }
 
-        if (player.getEntityWorld().isClient()) {
-            cir.setReturnValue(ActionResult.SUCCESS);
+        if (player.level().isClientSide()) {
+            cir.setReturnValue(InteractionResult.SUCCESS);
             return;
         }
 
-        if (player instanceof ServerPlayerEntity serverPlayer && parrot.mountOnto(serverPlayer)) {
-            cir.setReturnValue(ActionResult.SUCCESS);
+        if (player instanceof ServerPlayer serverPlayer && parrot.setEntityOnShoulder(serverPlayer)) {
+            cir.setReturnValue(InteractionResult.SUCCESS);
         }
     }
 }

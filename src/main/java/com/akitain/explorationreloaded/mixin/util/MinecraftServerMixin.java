@@ -12,7 +12,7 @@ import java.util.ArrayList;
 
 @Mixin(MinecraftServer.class)
 public abstract class MinecraftServerMixin {
-    @Inject(method = "tick", at = @At("RETURN"))
+    @Inject(method = "tickServer", at = @At("RETURN"))
     private void syncMapBooks(CallbackInfo ci) {
         MinecraftServer server = (MinecraftServer)(Object) this;
         for (int id : MapBookStateManager.INSTANCE.currentBooks) {

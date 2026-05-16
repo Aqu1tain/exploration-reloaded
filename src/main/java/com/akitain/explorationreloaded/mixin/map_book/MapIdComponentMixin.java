@@ -1,24 +1,24 @@
 package com.akitain.explorationreloaded.mixin.map_book;
 
-import net.minecraft.component.ComponentsAccess;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.MapIdComponent;
-import net.minecraft.item.Item;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.function.Consumer;
+import net.minecraft.core.component.DataComponentGetter;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.saveddata.maps.MapId;
 
-@Mixin(MapIdComponent.class)
+@Mixin(MapId.class)
 public abstract class MapIdComponentMixin {
 
-    @Inject(method = "appendTooltip", at = @At(value = "HEAD"), cancellable = true)
-    private void mapBookNoTooltop(Item.TooltipContext context, Consumer<Text> textConsumer, TooltipType type, ComponentsAccess components,
+    @Inject(method = "addToTooltip", at = @At(value = "HEAD"), cancellable = true)
+    private void mapBookNoTooltop(Item.TooltipContext context, Consumer<Component> textConsumer, TooltipFlag type, DataComponentGetter components,
                               CallbackInfo ci){
-        if (components.getOrDefault(DataComponentTypes.REPAIR_COST, 0)==3) ci.cancel();
+        if (components.getOrDefault(DataComponents.REPAIR_COST, 0)==3) ci.cancel();
     }
 }

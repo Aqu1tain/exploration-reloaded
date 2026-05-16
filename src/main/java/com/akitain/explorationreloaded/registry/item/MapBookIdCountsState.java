@@ -2,11 +2,11 @@ package com.akitain.explorationreloaded.registry.item;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.datafixer.DataFixTypes;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-public class MapBookIdCountsState extends PersistentState {
+public class MapBookIdCountsState extends SavedData {
     public static final Codec<MapBookIdCountsState> CODEC = RecordCodecBuilder.create(
              instance -> instance.group(
                      Codec.INT.optionalFieldOf("exploration-reloaded:map_book", -1).forGetter( state -> state.nextMapBookId))
@@ -26,10 +26,10 @@ public class MapBookIdCountsState extends PersistentState {
 
     public int get() {
         nextMapBookId++;
-        this.markDirty();
+        this.setDirty();
         return nextMapBookId;
     }
-    public static final PersistentStateType<MapBookIdCountsState> persistentStateType = new PersistentStateType<>(
+    public static final SavedDataType<MapBookIdCountsState> persistentStateType = new SavedDataType<>(
             IDCOUNTS_KEY, MapBookIdCountsState::new, CODEC, DataFixTypes.SAVED_DATA_MAP_INDEX
     );
 

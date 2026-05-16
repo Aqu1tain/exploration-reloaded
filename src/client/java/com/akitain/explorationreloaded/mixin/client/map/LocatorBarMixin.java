@@ -6,30 +6,7 @@ import com.akitain.explorationreloaded.registry.item.MapBookItem;
 import com.akitain.explorationreloaded.registry.item.MapBookState;
 import com.akitain.explorationreloaded.registry.item.MapBookStateManager;
 import com.akitain.explorationreloaded.registry.item.MapStateData;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.bar.LocatorBar;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.resource.waypoint.WaypointStyleAsset;
-import net.minecraft.client.util.Window;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.MapIdComponent;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.map.MapDecoration;
-import net.minecraft.item.map.MapState;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.ColorHelper;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.tick.TickManager;
-import net.minecraft.world.waypoint.EntityTickProgress;
-import net.minecraft.world.waypoint.TrackedWaypoint;
-import net.minecraft.world.waypoint.Waypoint;
-import net.minecraft.world.waypoint.WaypointStyles;
+import com.mojang.blaze3d.platform.Window;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -41,63 +18,86 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.contextualbar.LocatorBarRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.resources.WaypointStyle;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.TickRateManager;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.maps.MapDecoration;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.waypoints.PartialTickSupplier;
+import net.minecraft.world.waypoints.TrackedWaypoint;
+import net.minecraft.world.waypoints.Waypoint;
+import net.minecraft.world.waypoints.WaypointStyleAssets;
 
-import static net.minecraft.item.FilledMapItem.getMapState;
+import static net.minecraft.world.item.MapItem.getSavedData;
 
-@Mixin(LocatorBar.class)
+@Mixin(LocatorBarRenderer.class)
 public class LocatorBarMixin {
 
     @Shadow
     @Final
-    private static Identifier ARROW_DOWN;
+    private static Identifier LOCATOR_BAR_ARROW_DOWN;
     @Shadow
     @Final
-    private static Identifier ARROW_UP;
+    private static Identifier LOCATOR_BAR_ARROW_UP;
 
-    @Inject(method = "renderAddons", at = @At(
+    @Inject(method = "render", at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/entity/Entity;getEntityWorld()Lnet/minecraft/world/World;"
+            target = "Lnet/minecraft/world/entity/Entity;level()Lnet/minecraft/world/level/Level;"
     ), cancellable = true
     )
-    private void addBannerMarkers(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci){
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void addBannerMarkers(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci){
+        Minecraft client = Minecraft.getInstance();
         int i = getCenterY(client.getWindow());
-        assert client.world != null;
+        assert client.level != null;
         assert client.player != null;
         assert client.getCameraEntity() != null;
-        World world = client.getCameraEntity().getEntityWorld();
-        TickManager tickManager = world.getTickManager();
-        EntityTickProgress entityTickProgress = entityx -> tickCounter.getTickProgress(!tickManager.shouldSkipTick(entityx));
+        Level world = client.getCameraEntity().level();
+        TickRateManager tickManager = world.tickRateManager();
+        PartialTickSupplier entityTickProgress = entityx -> tickCounter.getGameTimeDeltaPartialTick(!tickManager.isEntityFrozen(entityx));
 
-        client.player.networkHandler.getWaypointHandler().forEachWaypoint(client.getCameraEntity(), (waypoint) -> {
-            if (!(Boolean)waypoint.getSource().left().map((uuid) -> uuid.equals(client.getCameraEntity().getUuid())).orElse(false)) {
-                if (waypoint.getConfig().style != WaypointStyles.DEFAULT) {
-                    double d = waypoint.getRelativeYaw(world, client.gameRenderer.getCamera(), entityTickProgress);
+        client.player.connection.getWaypointManager().forEachWaypoint(client.getCameraEntity(), (waypoint) -> {
+            if (!(Boolean)waypoint.id().left().map((uuid) -> uuid.equals(client.getCameraEntity().getUUID())).orElse(false)) {
+                if (waypoint.icon().style != WaypointStyleAssets.DEFAULT) {
+                    double d = waypoint.yawAngleToCamera(world, client.gameRenderer.getMainCamera(), entityTickProgress);
                     if (!(d <= -61.0) && !(d > 60.0)) {
-                        int j = MathHelper.ceil((float) (context.getScaledWindowWidth() - 9) / 2.0F);
-                        Waypoint.Config config = waypoint.getConfig();
-                        WaypointStyleAsset waypointStyleAsset = client.getWaypointStyleAssetManager().get(config.style);
-                        float f = MathHelper.sqrt((float) waypoint.squaredDistanceTo(client.getCameraEntity()));
-                        Identifier identifier = waypointStyleAsset.getSpriteForDistance(f);
-                        int k =  config.color.orElseGet(() -> waypoint.getSource().map(
-                                (uuid) -> ColorHelper.withBrightness(ColorHelper.withAlpha(255, uuid.hashCode()), 0.9F),
-                                (name) -> ColorHelper.withBrightness(ColorHelper.withAlpha(255, name.hashCode()), 0.9F)));
+                        int j = Mth.ceil((float) (context.guiWidth() - 9) / 2.0F);
+                        Waypoint.Icon config = waypoint.icon();
+                        WaypointStyle waypointStyleAsset = client.getWaypointStyles().get(config.style);
+                        float f = Mth.sqrt((float) waypoint.distanceSquared(client.getCameraEntity()));
+                        Identifier identifier = waypointStyleAsset.sprite(f);
+                        int k =  config.color.orElseGet(() -> waypoint.id().map(
+                                (uuid) -> ARGB.setBrightness(ARGB.color(255, uuid.hashCode()), 0.9F),
+                                (name) -> ARGB.setBrightness(ARGB.color(255, name.hashCode()), 0.9F)));
                         int l = (int) (d * 173.0 / 2.0 / 60.0);
-                        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, identifier, j + l, i - 2, 9, 9, k);
-                        TrackedWaypoint.Pitch pitch = waypoint.getPitch(world, client.gameRenderer, entityTickProgress);
-                        if (pitch != TrackedWaypoint.Pitch.NONE) {
+                        context.blitSprite(RenderPipelines.GUI_TEXTURED, identifier, j + l, i - 2, 9, 9, k);
+                        TrackedWaypoint.PitchDirection pitch = waypoint.pitchDirectionToCamera(world, client.gameRenderer, entityTickProgress);
+                        if (pitch != TrackedWaypoint.PitchDirection.NONE) {
                             byte m;
                             Identifier identifier2;
-                            if (pitch == TrackedWaypoint.Pitch.DOWN) {
+                            if (pitch == TrackedWaypoint.PitchDirection.DOWN) {
                                 m = 6;
-                                identifier2 = ARROW_DOWN;
+                                identifier2 = LOCATOR_BAR_ARROW_DOWN;
                             }
                             else {
                                 m = -6;
-                                identifier2 = ARROW_UP;
+                                identifier2 = LOCATOR_BAR_ARROW_UP;
                             }
 
-                            context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, identifier2, j + l + 1, i + m, 7, 5);
+                            context.blitSprite(RenderPipelines.GUI_TEXTURED, identifier2, j + l + 1, i + m, 7, 5);
                         }
 
                     }
@@ -106,33 +106,33 @@ public class LocatorBarMixin {
         });
 
 
-        ItemStack stack = client.player.getMainHandStack();
+        ItemStack stack = client.player.getMainHandItem();
         if (stack == null) {ci.cancel();return;}
-        if (!(stack.getItem() instanceof MapBookItem)) stack = client.player.getOffHandStack();
+        if (!(stack.getItem() instanceof MapBookItem)) stack = client.player.getOffhandItem();
         if (!(stack.getItem() instanceof MapBookItem)) {
-            stack = client.player.getMainHandStack();
-            if (!(stack.getItem() instanceof FilledMapItem)) stack = client.player.getOffHandStack();
-            if (!(stack.getItem() instanceof FilledMapItem)) {ci.cancel();return;}
+            stack = client.player.getMainHandItem();
+            if (!(stack.getItem() instanceof MapItem)) stack = client.player.getOffhandItem();
+            if (!(stack.getItem() instanceof MapItem)) {ci.cancel();return;}
 
-            MapState mapState = getMapState(stack, client.world);
+            MapItemSavedData mapState = getSavedData(stack, client.level);
             if (mapState!=null) {
                 for (MapDecoration mapIcon : mapState.getDecorations()) {
-                    if (!mapIcon.type().getIdAsString().contains("player")) {
-                        Vec3d c = client.gameRenderer.getCamera().getCameraPos();
+                    if (!mapIcon.type().getRegisteredName().contains("player")) {
+                        Vec3 c = client.gameRenderer.getMainCamera().position();
                         float mapScale = (float) Math.pow(2, mapState.scale);
                         float offset = 64f * mapScale;
                         float x = (mapState.centerX - offset + (mapIcon.x() + 128 + 1) * mapScale / 2);
-                        float z = (mapState.centerZ - offset + (mapIcon.z() + 128 + 1) * mapScale / 2);
+                        float z = (mapState.centerZ - offset + (mapIcon.y() + 128 + 1) * mapScale / 2);
 
                         double a = getAngle(c, x, z, client);
                         if (!(a <= -61.0) && !(a > 60.0)) {
-                            int k = MathHelper.ceil((context.getScaledWindowWidth() - 9) / 2.0F);
+                            int k = Mth.ceil((context.guiWidth() - 9) / 2.0F);
                             int m = (int) (a * 173.0 / 2.0 / 60.0);
                             double d = Math.sqrt((x-c.x)*(x-c.x)+(z-c.z)*(z-c.z));
                             if (d > 0.5 && d < 10000) {
                                 int dd = (int) (255 * (1 - (d / 10000)));
-                                context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, Identifier.of(
-                                                "hud/locator_bar_dot/map_decorations/" + mapIcon.getAssetId().getPath()),
+                                context.blitSprite(RenderPipelines.GUI_TEXTURED, Identifier.parse(
+                                                "hud/locator_bar_dot/map_decorations/" + mapIcon.getSpriteLocation().getPath()),
                                         k + m, i - 2, 9, 9, (new Color(255, 255, 255, dd)).hashCode());
 
                             }}
@@ -143,31 +143,31 @@ public class LocatorBarMixin {
             return;
         }
 
-        for (MapStateData mapStateData : getMapStates(stack, client.world)) {
+        for (MapStateData mapStateData : getMapStates(stack, client.level)) {
             float render = 0.0f;
-            if (client.world.getDimensionEntry().getIdAsString().contains(mapStateData.mapState.dimension.getValue().toString()))
+            if (client.level.dimensionTypeRegistration().getRegisteredName().contains(mapStateData.mapState.dimension.identifier().toString()))
                 render = 1.0f;
-            if (client.world.getDimensionEntry().getIdAsString().contains("the_nether") &&
-                mapStateData.mapState.dimension.getValue().toString().contains("overworld"))
+            if (client.level.dimensionTypeRegistration().getRegisteredName().contains("the_nether") &&
+                mapStateData.mapState.dimension.identifier().toString().contains("overworld"))
                 render = 1 / 8.0f;
            if (render > 0) {
                 for (MapDecoration mapIcon : mapStateData.mapState.getDecorations()) {
-                    if (!mapIcon.type().getIdAsString().contains("player")) {
-                        Vec3d c = client.gameRenderer.getCamera().getCameraPos();
+                    if (!mapIcon.type().getRegisteredName().contains("player")) {
+                        Vec3 c = client.gameRenderer.getMainCamera().position();
                         float mapScale = (float) Math.pow(2, mapStateData.mapState.scale);
                         float offset = 64f * mapScale;
                         float x = (mapStateData.mapState.centerX - offset + (mapIcon.x() + 128 + 1) * mapScale / 2) * render;
-                        float z = (mapStateData.mapState.centerZ - offset + (mapIcon.z() + 128 + 1) * mapScale / 2) * render;
+                        float z = (mapStateData.mapState.centerZ - offset + (mapIcon.y() + 128 + 1) * mapScale / 2) * render;
 
                         double a = getAngle(c, x, z, client);
                         if (!(a <= -61.0) && !(a > 60.0)) {
-                            int k = MathHelper.ceil((context.getScaledWindowWidth() - 9) / 2.0F);
+                            int k = Mth.ceil((context.guiWidth() - 9) / 2.0F);
                             int m = (int) (a * 173.0 / 2.0 / 60.0);
                             double d = Math.sqrt((x-c.x)*(x-c.x)+(z-c.z)*(z-c.z));
                             if (d > 0.5 && d < 10000) {
                                 int dd = (int) (255 * (1 - (d / 10000)));
-                                context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, Identifier.of(
-                                                "hud/locator_bar_dot/map_decorations/" + mapIcon.getAssetId().getPath()),
+                                context.blitSprite(RenderPipelines.GUI_TEXTURED, Identifier.parse(
+                                                "hud/locator_bar_dot/map_decorations/" + mapIcon.getSpriteLocation().getPath()),
                                         k + m, i - 2, 9, 9, (new Color(255, 255, 255, dd)).hashCode());
                             }
                         }
@@ -177,25 +177,25 @@ public class LocatorBarMixin {
         }
 
         int id = -1;
-        if (stack.contains(DataComponentTypes.MAP_ID)) {
-            id = stack.get(DataComponentTypes.MAP_ID).id();
+        if (stack.has(DataComponents.MAP_ID)) {
+            id = stack.get(DataComponents.MAP_ID).id();
         }
-        PlayerEntity thisPlayer = client.player;
+        Player thisPlayer = client.player;
         MapBookState mps = MapBookStateManager.INSTANCE.getClientMapBookState(id);
         if (mps != null ) {
-            if (mps.marker.dimension.contains(thisPlayer.getEntityWorld().getDimensionEntry().getIdAsString())) {
-                Vec3d c = client.gameRenderer.getCamera().getCameraPos();
+            if (mps.marker.dimension.contains(thisPlayer.level().dimensionTypeRegistration().getRegisteredName())) {
+                Vec3 c = client.gameRenderer.getMainCamera().position();
                 double x = mps.marker.x;
                 double z = mps.marker.z;
 
                 double a = getAngle(c, x, z, client);
                 if (!(a <= -61.0) && !(a > 60.0)) {
-                    int k = MathHelper.ceil((context.getScaledWindowWidth() - 9) / 2.0F);
+                    int k = Mth.ceil((context.guiWidth() - 9) / 2.0F);
                     int m = (int) (a * 173.0 / 2.0 / 60.0);
                     double d = Math.sqrt((x - c.x) * (x - c.x) + (z - c.z) * (z - c.z));
                     if (d > 0.5 && d < 10000) {
                         int dd = (int) (255 * (1 - (d / 10000)));
-                        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, Identifier.of(
+                        context.blitSprite(RenderPipelines.GUI_TEXTURED, Identifier.parse(
                                         "hud/locator_bar_dot/map_decorations/target_x"),
                                 k + m, i - 2, 9, 9, (new Color(255, 255, 255, dd)).hashCode());
                     }
@@ -211,7 +211,7 @@ public class LocatorBarMixin {
                     for (MapBookPlayer player : mp) {
                         if (player.dimension.contains(p.dimension)) {
                             if (!(player.name.contains(p.name) && p.name.contains(player.name))) {
-                                Vec3d c = client.gameRenderer.getCamera().getCameraPos();
+                                Vec3 c = client.gameRenderer.getMainCamera().position();
 
                                 double x = player.x;
                                 double y = player.y;
@@ -220,13 +220,13 @@ public class LocatorBarMixin {
                                 double dd = Math.sqrt((x-c.x)*(x-c.x)+(y-c.y)*(y-c.y)+(z-c.z)*(z-c.z));
                                 double a = getAngle(c, x, z, client);
                                 if (!(a <= -61.0) && !(a > 60.0)) {
-                                    int k = MathHelper.ceil((context.getScaledWindowWidth() - 9) / 2.0F);
+                                    int k = Mth.ceil((context.guiWidth() - 9) / 2.0F);
                                     int m = (int) (a * 173.0 / 2.0 / 60.0);
 
                                     int color = MapBookScreen.getColor(player, client);
-                                    WaypointStyleAsset waypointStyleAsset = client.getWaypointStyleAssetManager().get(WaypointStyles.DEFAULT);
-                                    Identifier identifier = waypointStyleAsset.getSpriteForDistance((float) dd);
-                                    context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, identifier,
+                                    WaypointStyle waypointStyleAsset = client.getWaypointStyles().get(WaypointStyleAssets.DEFAULT);
+                                    Identifier identifier = waypointStyleAsset.sprite((float) dd);
+                                    context.blitSprite(RenderPipelines.GUI_TEXTURED, identifier,
                                             k + m, i - 2, 9, 9, color);
                                     int n = aboveOrBelow(c, x, y, z, client);
 
@@ -235,13 +235,13 @@ public class LocatorBarMixin {
                                         Identifier identifier2;
                                         if (n == -1) {
                                             o = 6;
-                                            identifier2 = ARROW_DOWN;
+                                            identifier2 = LOCATOR_BAR_ARROW_DOWN;
                                         } else {
                                             o = -6;
-                                            identifier2 = ARROW_UP;
+                                            identifier2 = LOCATOR_BAR_ARROW_UP;
                                         }
 
-                                        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, identifier2, k + m + 1, i + o, 7, 5);
+                                        context.blitSprite(RenderPipelines.GUI_TEXTURED, identifier2, k + m + 1, i + o, 7, 5);
                                     }
                                 }
                             }
@@ -256,11 +256,11 @@ public class LocatorBarMixin {
     }
 
     @Unique
-    private static double getAngle(Vec3d c, double x, double z, MinecraftClient client) {
+    private static double getAngle(Vec3 c, double x, double z, Minecraft client) {
         double a = -Math.atan((x - c.x) / (z - c.z));
         a *= 180 / Math.PI;
         if (z < c.z) a += 180;
-        a -= client.gameRenderer.getCamera().getYaw() % 360;
+        a -= client.gameRenderer.getMainCamera().yRot() % 360;
         a += 720;
         a += 180;
         a %= 360;
@@ -269,12 +269,12 @@ public class LocatorBarMixin {
     }
 
     @Unique
-    private static int aboveOrBelow(Vec3d c, double x, double y, double z, MinecraftClient client) {
+    private static int aboveOrBelow(Vec3 c, double x, double y, double z, Minecraft client) {
         double xz = Math.sqrt((x-c.x)*(x-c.x)+(z-c.z)*(z-c.z));
         double a = -Math.atan(xz / (y - c.y));
         a *= 180 / Math.PI;
         if (y < c.y) a += 180;
-        a += client.gameRenderer.getCamera().getPitch() % 360;
+        a += client.gameRenderer.getMainCamera().xRot() % 360;
         a+=90;
         a += 720;
         a += 180;
@@ -287,19 +287,19 @@ public class LocatorBarMixin {
 
     @Unique
     int getCenterY(Window window) {
-        return window.getScaledHeight() - 24 - 5;
+        return window.getGuiScaledHeight() - 24 - 5;
     }
 
     @Unique
-    private ArrayList<MapStateData> getMapStates(ItemStack stack, World world) {
+    private ArrayList<MapStateData> getMapStates(ItemStack stack, Level world) {
         ArrayList<MapStateData> list = new ArrayList<>();
         MapBookState mapBookState = getMapBookState(stack);
 
         if (mapBookState != null) {
             for (int i : mapBookState.mapIDs) {
-                MapState mapState = world.getMapState(new MapIdComponent(i));
+                MapItemSavedData mapState = world.getMapData(new MapId(i));
                 if (mapState != null) {
-                    list.add(new MapStateData(new MapIdComponent(i), mapState));
+                    list.add(new MapStateData(new MapId(i), mapState));
                 }
             }
         }
@@ -315,7 +315,7 @@ public class LocatorBarMixin {
 
     @Unique
     private static int getMapBookId(ItemStack stack) {
-        MapIdComponent mapIdComponent = stack.getOrDefault(DataComponentTypes.MAP_ID, null);
+        MapId mapIdComponent = stack.getOrDefault(DataComponents.MAP_ID, null);
         if (mapIdComponent!=null) return mapIdComponent.id();
         return -1;
     }

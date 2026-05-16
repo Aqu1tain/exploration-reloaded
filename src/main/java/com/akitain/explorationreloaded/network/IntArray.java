@@ -1,49 +1,48 @@
 package com.akitain.explorationreloaded.network;
 
 import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.encoding.VarInts;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.network.VarInt;
+import net.minecraft.network.codec.StreamCodec;
 
 public class IntArray {
-    public static final PacketCodec<ByteBuf, int[]> ARRAY_CODEC = new PacketCodec<>() {
+    public static final StreamCodec<ByteBuf, int[]> ARRAY_CODEC = new StreamCodec<>() {
         public int[] decode(ByteBuf byteBuf) {
-            int length = VarInts.read(byteBuf);
+            int length = VarInt.read(byteBuf);
 
             int[] array = new int[length];
             for(int j = 0; j < length; j++) {
-                array[j] = VarInts.read(byteBuf);
+                array[j] = VarInt.read(byteBuf);
             }
             return array;
         }
 
         public void encode(ByteBuf byteBuf, int[] array) {
-            VarInts.write(byteBuf, array.length);
+            VarInt.write(byteBuf, array.length);
 
             for (int i : array) {
-                VarInts.write(byteBuf, i);
+                VarInt.write(byteBuf, i);
             }
         }
     };
 
-    public static final PacketCodec<ByteBuf, List<Integer>> LIST_CODEC = new PacketCodec<>() {
+    public static final StreamCodec<ByteBuf, List<Integer>> LIST_CODEC = new StreamCodec<>() {
         public List<Integer> decode(ByteBuf byteBuf) {
-            int length = VarInts.read(byteBuf);
+            int length = VarInt.read(byteBuf);
 
             List<Integer> list = new ArrayList<>(length);
             for(int j = 0; j < length; j++) {
-                list.add(VarInts.read(byteBuf));
+                list.add(VarInt.read(byteBuf));
             }
             return list;
         }
 
         public void encode(ByteBuf byteBuf, List<Integer> list) {
-            VarInts.write(byteBuf, list.size());
+            VarInt.write(byteBuf, list.size());
 
             for (int i : list) {
-                VarInts.write(byteBuf, i);
+                VarInt.write(byteBuf, i);
             }
         }
     };

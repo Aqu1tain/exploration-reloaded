@@ -11,9 +11,9 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.util.Identifier;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +28,16 @@ public class ExplorationReloaded implements ModInitializer {
         ExplorationRegistries.register();
         MapBookNetworking.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                dispatcher.register(CommandManager.literal("mapBookMarker")
-                        .then(CommandManager.argument("id", IntegerArgumentType.integer())
-                                .then(CommandManager.argument("x", StringArgumentType.string())
-                                        .then(CommandManager.argument("z", StringArgumentType.string())
-                                                .then(CommandManager.argument("dim", StringArgumentType.string())
+                dispatcher.register(Commands.literal("mapBookMarker")
+                        .then(Commands.argument("id", IntegerArgumentType.integer())
+                                .then(Commands.argument("x", StringArgumentType.string())
+                                        .then(Commands.argument("z", StringArgumentType.string())
+                                                .then(Commands.argument("dim", StringArgumentType.string())
                                                         .executes(ExplorationReloaded::executeMapBookMarker)))))));
         LOGGER.info("Exploration Reloaded loaded");
     }
 
-    private static int executeMapBookMarker(CommandContext<ServerCommandSource> context) {
+    private static int executeMapBookMarker(CommandContext<CommandSourceStack> context) {
         int id = IntegerArgumentType.getInteger(context, "id");
         double x = Double.parseDouble(StringArgumentType.getString(context, "x"));
         double z = Double.parseDouble(StringArgumentType.getString(context, "z"));
@@ -50,6 +50,6 @@ public class ExplorationReloaded implements ModInitializer {
     }
 
     public static Identifier id(String path) {
-        return Identifier.of(MOD_ID, path);
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 }

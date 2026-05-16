@@ -2,21 +2,6 @@ package com.akitain.explorationreloaded.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.passive.WanderingTraderEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.registry.tag.BiomeTags;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.WanderingTraderManager;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.level.ServerWorldProperties;
-import net.minecraft.world.poi.PointOfInterestStorage;
-import net.minecraft.world.poi.PointOfInterestTypes;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,35 +13,50 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BiomeTags;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
+import net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader;
+import net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.storage.ServerLevelData;
 
-@Mixin(WanderingTraderManager.class)
+@Mixin(WanderingTraderSpawner.class)
 public abstract class WanderingTraderManagerMixin {
     @Shadow
     @Final
-    private ServerWorldProperties properties;
+    private ServerLevelData serverLevelData;
 
     @Shadow
     @Final
-    private Random random;
+    private RandomSource random;
 
     @Shadow
     @Nullable
-    protected abstract BlockPos getNearbySpawnPos(WorldView world, BlockPos pos, int range);
+    protected abstract BlockPos findSpawnPositionNear(LevelReader world, BlockPos pos, int range);
 
     @Shadow
-    protected abstract boolean doesNotSuffocateAt(BlockView world, BlockPos pos);
+    protected abstract boolean hasEnoughSpace(BlockGetter world, BlockPos pos);
 
     @Shadow
-    protected abstract void spawnLlama(ServerWorld world, WanderingTraderEntity wanderingTrader, int range);
+    protected abstract void tryToSpawnLlamaFor(ServerLevel world, WanderingTrader wanderingTrader, int range);
 
-    @ModifyExpressionValue(method = "getNearbySpawnPos", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/SpawnLocation;isSpawnPositionOk(Lnet/minecraft/world/WorldView;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/entity/EntityType;)Z"))
-    private boolean naturalSpawnsWanderingTrader(boolean original, @Local(argsOnly = true) WorldView world, @Local(argsOnly = true) BlockPos pos) {
-        return original && world.getBlockState(pos.down()).isIn(BlockTags.AZALEA_ROOT_REPLACEABLE);
+    @ModifyExpressionValue(method = "findSpawnPositionNear", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/SpawnPlacementType;isSpawnPositionOk(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/EntityType;)Z"))
+    private boolean naturalSpawnsWanderingTrader(boolean original, @Local(argsOnly = true) LevelReader world, @Local(argsOnly = true) BlockPos pos) {
+        return original && world.getBlockState(pos.below()).is(BlockTags.AZALEA_ROOT_REPLACEABLE);
     }
 
-    @Inject(method = "trySpawn", at = @At("HEAD"), cancellable = true)
-    private void spawnMoreOften(ServerWorld world, CallbackInfoReturnable<Boolean> cir) {
-        PlayerEntity player = world.getRandomAlivePlayer();
+    @Inject(method = "spawn", at = @At("HEAD"), cancellable = true)
+    private void spawnMoreOften(ServerLevel world, CallbackInfoReturnable<Boolean> cir) {
+        Player player = world.getRandomPlayer();
         if (player == null) {
             cir.setReturnValue(true);
             return;
@@ -67,45 +67,45 @@ public abstract class WanderingTraderManagerMixin {
             return;
         }
 
-        BlockPos playerPos = player.getBlockPos();
-        Optional<BlockPos> meetingPoint = world.getPointOfInterestStorage().getPosition(
-                poiType -> poiType.matchesKey(PointOfInterestTypes.MEETING),
+        BlockPos playerPos = player.blockPosition();
+        Optional<BlockPos> meetingPoint = world.getPoiManager().find(
+                poiType -> poiType.is(PoiTypes.MEETING),
                 pos -> true,
                 playerPos,
                 48,
-                PointOfInterestStorage.OccupationStatus.ANY
+                PoiManager.Occupancy.ANY
         );
 
         BlockPos targetPos = meetingPoint.orElse(playerPos);
-        BlockPos spawnPos = getNearbySpawnPos(world, targetPos, 48);
-        if (spawnPos == null || !doesNotSuffocateAt(world, spawnPos)) {
+        BlockPos spawnPos = findSpawnPositionNear(world, targetPos, 48);
+        if (spawnPos == null || !hasEnoughSpace(world, spawnPos)) {
             cir.setReturnValue(false);
             return;
         }
 
-        if (world.getBiome(spawnPos).isIn(BiomeTags.WITHOUT_WANDERING_TRADER_SPAWNS)) {
+        if (world.getBiome(spawnPos).is(BiomeTags.WITHOUT_WANDERING_TRADER_SPAWNS)) {
             cir.setReturnValue(false);
             return;
         }
 
-        WanderingTraderEntity wanderingTrader = EntityType.WANDERING_TRADER.spawn(world, spawnPos, SpawnReason.EVENT);
+        WanderingTrader wanderingTrader = EntityType.WANDERING_TRADER.spawn(world, spawnPos, EntitySpawnReason.EVENT);
         if (wanderingTrader == null) {
             cir.setReturnValue(false);
             return;
         }
 
         for (int i = 0; i < 2; i++) {
-            spawnLlama(world, wanderingTrader, 4);
+            tryToSpawnLlamaFor(world, wanderingTrader, 4);
         }
 
-        properties.setWanderingTraderId(wanderingTrader.getUuid());
+        serverLevelData.setWanderingTraderId(wanderingTrader.getUUID());
         wanderingTrader.setDespawnDelay(48000);
         wanderingTrader.setWanderTarget(targetPos);
-        wanderingTrader.setPositionTarget(targetPos, 16);
+        wanderingTrader.setHomeTo(targetPos, 16);
         cir.setReturnValue(true);
     }
 
-    @ModifyConstant(method = "spawn", constant = @Constant(intValue = 75))
+    @ModifyConstant(method = "tick", constant = @Constant(intValue = 75))
     private int raiseMaximumSpawnChance(int constant) {
         return 100;
     }

@@ -1,18 +1,5 @@
 package com.akitain.explorationreloaded.mixin;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LeveledCauldronBlock;
-import net.minecraft.block.cauldron.CauldronBehavior;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,15 +8,28 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.cauldron.CauldronInteraction;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
-@Mixin(CauldronBehavior.class)
+@Mixin(CauldronInteraction.class)
 public interface CauldronBehaviorMixin {
     @Shadow
-    CauldronBehavior.CauldronBehaviorMap WATER_CAULDRON_BEHAVIOR = null;
+    CauldronInteraction.InteractionMap WATER = null;
 
-    @Inject(method = "registerBehavior", at = @At("TAIL"))
+    @Inject(method = "bootStrap", at = @At("TAIL"))
     private static void explorationReloaded$registerHarnessCleaning(CallbackInfo ci) {
-        Map<Item, CauldronBehavior> map = WATER_CAULDRON_BEHAVIOR.map();
+        Map<Item, CauldronInteraction> map = WATER.map();
         Item[] coloredHarnesses = {
             Items.LIGHT_GRAY_HARNESS,
             Items.GRAY_HARNESS,
@@ -54,22 +54,22 @@ public interface CauldronBehaviorMixin {
     }
 
     @Unique
-    private static ActionResult cleanHarness(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack stack) {
+    private static InteractionResult cleanHarness(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack) {
         return cleanSimple(state, world, pos, player, hand, stack, ItemTags.HARNESSES, Items.WHITE_HARNESS);
     }
 
     @Unique
-    private static ActionResult cleanSimple(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack stack, TagKey<Item> itemTag, Item into) {
-        if (!stack.isIn(itemTag)) {
-            return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
+    private static InteractionResult cleanSimple(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, TagKey<Item> itemTag, Item into) {
+        if (!stack.is(itemTag)) {
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
-        if (!world.isClient()) {
-            ItemStack itemStack = stack.copyComponentsToNewStack(into, stack.getCount());
-            player.setStackInHand(hand, itemStack);
-            LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
+        if (!world.isClientSide()) {
+            ItemStack itemStack = stack.transmuteCopy(into, stack.getCount());
+            player.setItemInHand(hand, itemStack);
+            LayeredCauldronBlock.lowerFillLevel(state, world, pos);
         }
 
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 }

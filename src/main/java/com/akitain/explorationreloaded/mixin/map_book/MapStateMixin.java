@@ -4,19 +4,6 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.datafixers.util.Pair;
 import com.akitain.explorationreloaded.registry.item.MapStateAccessor;
 import com.akitain.explorationreloaded.registry.ExplorationRegistries;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.MapColorComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.map.MapBannerMarker;
-import net.minecraft.item.map.MapDecoration;
-import net.minecraft.item.map.MapDecorationType;
-import net.minecraft.item.map.MapDecorationTypes;
-import net.minecraft.item.map.MapState;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.text.Text;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldAccess;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -35,13 +22,26 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.MapItemColor;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.saveddata.maps.MapBanner;
+import net.minecraft.world.level.saveddata.maps.MapDecoration;
+import net.minecraft.world.level.saveddata.maps.MapDecorationType;
+import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
-@Mixin(MapState.class)
+@Mixin(MapItemSavedData.class)
 public class MapStateMixin implements MapStateAccessor {
 
     @Shadow
     @Final
-    private Map<String, MapBannerMarker> banners;
+    private Map<String, MapBanner> bannerMarkers;
 
     @Final @Shadow @Mutable
     public int centerX;
@@ -60,15 +60,15 @@ public class MapStateMixin implements MapStateAccessor {
     }
 
     @Unique
-    private static HashMap<RegistryEntry<MapDecorationType>, Integer> decoToColor;
+    private static HashMap<Holder<MapDecorationType>, Integer> decoToColor;
 
     static {
         decoToColor = new HashMap<>();
-        decoToColor.put(MapDecorationTypes.VILLAGE_PLAINS, 3003659);
-        decoToColor.put(MapDecorationTypes.VILLAGE_DESERT, 16766219);
-        decoToColor.put(MapDecorationTypes.VILLAGE_SAVANNA, 13536268);
-        decoToColor.put(MapDecorationTypes.VILLAGE_TAIGA, 6857828);
-        decoToColor.put(MapDecorationTypes.VILLAGE_SNOWY, 14872575);
+        decoToColor.put(MapDecorationTypes.PLAINS_VILLAGE, 3003659);
+        decoToColor.put(MapDecorationTypes.DESERT_VILLAGE, 16766219);
+        decoToColor.put(MapDecorationTypes.SAVANNA_VILLAGE, 13536268);
+        decoToColor.put(MapDecorationTypes.TAIGA_VILLAGE, 6857828);
+        decoToColor.put(MapDecorationTypes.SNOWY_VILLAGE, 14872575);
         decoToColor.put(MapDecorationTypes.JUNGLE_TEMPLE, 1999367);
         decoToColor.put(MapDecorationTypes.SWAMP_HUT, 5390853);
 
@@ -76,53 +76,53 @@ public class MapStateMixin implements MapStateAccessor {
         decoToColor.put(ExplorationRegistries.RUINED_PORTAL, 11796480);
     }
 
-    @Inject(method = "addDecorationsNbt", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/map/MapDecorationType;hasMapColor()Z"), cancellable = true)
-    private static void addColorToBlandMaps(ItemStack stack, BlockPos pos, String id, RegistryEntry<MapDecorationType> decorationType,
+    @Inject(method = "addTargetDecoration", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/saveddata/maps/MapDecorationType;hasMapColor()Z"), cancellable = true)
+    private static void addColorToBlandMaps(ItemStack stack, BlockPos pos, String id, Holder<MapDecorationType> decorationType,
                                             CallbackInfo ci){
         if (decoToColor.containsKey(decorationType)){
-            stack.set(DataComponentTypes.MAP_COLOR, new MapColorComponent(decoToColor.get(decorationType)));
+            stack.set(DataComponents.MAP_COLOR, new MapItemColor(decoToColor.get(decorationType)));
             ci.cancel();
         }
     }
 
     @Inject(method = "addDecoration", at = @At(value = "TAIL"))
-    private void addDecoToBanners(RegistryEntry<MapDecorationType> type, @Nullable WorldAccess world, String key, double x, double z,
-                                  double rotation, @Nullable Text text, CallbackInfo ci){
+    private void addDecoToBanners(Holder<MapDecorationType> type, @Nullable LevelAccessor world, String key, double x, double z,
+                                  double rotation, @Nullable Component text, CallbackInfo ci){
         if (type.value().explorationMapElement()) {
-            if (this.banners.isEmpty()) {
+            if (this.bannerMarkers.isEmpty()) {
                 BlockPos bp = new BlockPos((int) x, -32768, (int) z);
-                Optional<Text> t = Optional.of(Text.of("¶" + type.value().assetId()));
-                MapBannerMarker mapBannerMarker = new MapBannerMarker(bp, DyeColor.BLACK, t);
-                this.banners.put(mapBannerMarker.getKey(), mapBannerMarker);
+                Optional<Component> t = Optional.of(Component.nullToEmpty("¶" + type.value().assetId()));
+                MapBanner mapBannerMarker = new MapBanner(bp, DyeColor.BLACK, t);
+                this.bannerMarkers.put(mapBannerMarker.getId(), mapBannerMarker);
             }
         }
     }
 
     @Redirect(method = "addDecoration", at = @At(
             value = "NEW",
-            target = "(Lnet/minecraft/registry/entry/RegistryEntry;BBBLjava/util/Optional;)Lnet/minecraft/item/map/MapDecoration;"
+            target = "(Lnet/minecraft/core/Holder;BBBLjava/util/Optional;)Lnet/minecraft/world/level/saveddata/maps/MapDecoration;"
     ))
-    private MapDecoration mapTypeAsCustomName(RegistryEntry<MapDecorationType> registryEntry, byte x, byte z, byte rotation, Optional<Text> optional,
-                                   @Local(argsOnly = true) RegistryEntry<MapDecorationType> type,
-                                   @Local(argsOnly = true) Text text) {
+    private MapDecoration mapTypeAsCustomName(Holder<MapDecorationType> registryEntry, byte x, byte z, byte rotation, Optional<Component> optional,
+                                   @Local(argsOnly = true) Holder<MapDecorationType> type,
+                                   @Local(argsOnly = true) Component text) {
         if (text != null) {
-            if (Objects.requireNonNull(text.getLiteralString()).charAt(0) == '¶') {
-                String[] s = text.getLiteralString().split("¶");
+            if (Objects.requireNonNull(text.tryCollapseToString()).charAt(0) == '¶') {
+                String[] s = text.tryCollapseToString().split("¶");
                 type = getMapType(s[1]);
                 return new MapDecoration(type, x, z, rotation, Optional.empty());
             }
 
-            if (Objects.requireNonNull(text.getLiteralString()).charAt(0) == '[') {
-                String[] s = text.getLiteralString().split("\\[");
+            if (Objects.requireNonNull(text.tryCollapseToString()).charAt(0) == '[') {
+                String[] s = text.tryCollapseToString().split("\\[");
                 if (s.length == 2) {
                     String[] s2 = s[1].split("]");
-                    RegistryEntry<MapDecorationType> type2 = getMapTypeLimited(s2[0]);
+                    Holder<MapDecorationType> type2 = getMapTypeLimited(s2[0]);
                     if (type2 != null) {
                         if (s2.length == 1) {
                             return new MapDecoration(type2, x, z, rotation, Optional.empty());
                         } else if (s2.length == 2) {
                             if (s2[1].charAt(0) == ' ') s2[1] = s2[1].substring(1);
-                            return new MapDecoration(type2, x, z, rotation, Optional.of(Text.of(s2[1])));
+                            return new MapDecoration(type2, x, z, rotation, Optional.of(Component.nullToEmpty(s2[1])));
                         }
                     }
                 }
@@ -133,10 +133,10 @@ public class MapStateMixin implements MapStateAccessor {
 
 
 
-    @Redirect(method = "removeBanner", at = @At(value = "INVOKE",
-                                                target = "Lnet/minecraft/item/map/MapBannerMarker;equals(Ljava/lang/Object;)Z"
+    @Redirect(method = "checkBanners", at = @At(value = "INVOKE",
+                                                target = "Lnet/minecraft/world/level/saveddata/maps/MapBanner;equals(Ljava/lang/Object;)Z"
     ))
-    private boolean noRemoveCustomIconBanner(MapBannerMarker instance, Object o){
+    private boolean noRemoveCustomIconBanner(MapBanner instance, Object o){
         if (instance.pos().getY() == -32768) {
             return true;
         }
@@ -146,9 +146,9 @@ public class MapStateMixin implements MapStateAccessor {
         return instance.equals(o);
     }
 
-    @Inject(method = "getPlayerMarkerAndRotation", at = @At("HEAD"), cancellable = true)
-    private void betterPlayerMarker(RegistryEntry<MapDecorationType> type, @Nullable WorldAccess world, double rotation, float dx, float dz,
-                                    CallbackInfoReturnable<Pair<RegistryEntry<MapDecorationType>, Byte>> cir) {
+    @Inject(method = "playerDecorationTypeAndRotation", at = @At("HEAD"), cancellable = true)
+    private void betterPlayerMarker(Holder<MapDecorationType> type, @Nullable LevelAccessor world, double rotation, float dx, float dz,
+                                    CallbackInfoReturnable<Pair<Holder<MapDecorationType>, Byte>> cir) {
         double rot = rotation < 0.0 ? rotation + 360.0 : rotation;
         rot = (rot + 8) * 16.0 / 360.0;
         if (rot >= 16) rot = 0;
@@ -181,17 +181,17 @@ public class MapStateMixin implements MapStateAccessor {
             "swamp_hut", "trial_chambers", "outpost"};
 
     @Inject(method = "getBanners", at = @At(value = "RETURN"), cancellable = true)
-    private void updateName(CallbackInfoReturnable<Collection<MapBannerMarker>> cir) {
-        Collection<MapBannerMarker> banners = cir.getReturnValue();
-        ArrayList<MapBannerMarker> newBanners = new ArrayList<MapBannerMarker>();
-        for (MapBannerMarker banner : banners) {
-            Optional<Text> original = banner.name();
+    private void updateName(CallbackInfoReturnable<Collection<MapBanner>> cir) {
+        Collection<MapBanner> banners = cir.getReturnValue();
+        ArrayList<MapBanner> newBanners = new ArrayList<MapBanner>();
+        for (MapBanner banner : banners) {
+            Optional<Component> original = banner.name();
             if (original.isPresent()) {
                 String name = original.get().getString();
                 if (name.contains("¶")) {
                     try {
                         int i = Integer.parseInt(name.substring(1));
-                        newBanners.add(new MapBannerMarker(banner.pos(), banner.color(), Optional.of(Text.of("¶"+updateNames[i]))));
+                        newBanners.add(new MapBanner(banner.pos(), banner.color(), Optional.of(Component.nullToEmpty("¶"+updateNames[i]))));
                     } catch (NumberFormatException e) {
                         newBanners.add(banner);
                     }
@@ -202,34 +202,34 @@ public class MapStateMixin implements MapStateAccessor {
     }
 
     @Unique
-    private RegistryEntry<MapDecorationType> getMapType(String type) {
-        if (type.contains("woodland_mansion")) return MapDecorationTypes.MANSION;
-        if (type.contains("ocean_monument")) return MapDecorationTypes.MONUMENT;
-        if (type.contains("desert_village")) return MapDecorationTypes.VILLAGE_DESERT;
-        if (type.contains("plains_village")) return MapDecorationTypes.VILLAGE_PLAINS;
-        if (type.contains("savanna_village")) return MapDecorationTypes.VILLAGE_SAVANNA;
-        if (type.contains("snowy_village")) return MapDecorationTypes.VILLAGE_SNOWY;
-        if (type.contains("taiga_village")) return MapDecorationTypes.VILLAGE_TAIGA;
+    private Holder<MapDecorationType> getMapType(String type) {
+        if (type.contains("woodland_mansion")) return MapDecorationTypes.WOODLAND_MANSION;
+        if (type.contains("ocean_monument")) return MapDecorationTypes.OCEAN_MONUMENT;
+        if (type.contains("desert_village")) return MapDecorationTypes.DESERT_VILLAGE;
+        if (type.contains("plains_village")) return MapDecorationTypes.PLAINS_VILLAGE;
+        if (type.contains("savanna_village")) return MapDecorationTypes.SAVANNA_VILLAGE;
+        if (type.contains("snowy_village")) return MapDecorationTypes.SNOWY_VILLAGE;
+        if (type.contains("taiga_village")) return MapDecorationTypes.TAIGA_VILLAGE;
         if (type.contains("jungle_temple")) return MapDecorationTypes.JUNGLE_TEMPLE;
         if (type.contains("swamp_hut")) return MapDecorationTypes.SWAMP_HUT;
         if (type.contains("trial_chambers")) return MapDecorationTypes.TRIAL_CHAMBERS;
         if (type.contains("red_x")) return MapDecorationTypes.RED_X;
 
-        if (type.contains("white_banner")) return MapDecorationTypes.BANNER_WHITE;
-        if (type.contains("orange_banner")) return MapDecorationTypes.BANNER_ORANGE;
-        if (type.contains("magenta_banner")) return MapDecorationTypes.BANNER_MAGENTA;
-        if (type.contains("light_blue_banner")) return MapDecorationTypes.BANNER_LIGHT_BLUE;
-        if (type.contains("yellow_banner")) return MapDecorationTypes.BANNER_YELLOW;
-        if (type.contains("lime_banner")) return MapDecorationTypes.BANNER_LIME;
-        if (type.contains("pink_banner")) return MapDecorationTypes.BANNER_PINK;
-        if (type.contains("gray_banner")) return MapDecorationTypes.BANNER_GRAY;
-        if (type.contains("light_gray_banner")) return MapDecorationTypes.BANNER_LIGHT_GRAY;
-        if (type.contains("cyan_banner")) return MapDecorationTypes.BANNER_CYAN;
-        if (type.contains("purple_banner")) return MapDecorationTypes.BANNER_PURPLE;
-        if (type.contains("blue_banner")) return MapDecorationTypes.BANNER_BLUE;
-        if (type.contains("brown_banner")) return MapDecorationTypes.BANNER_BROWN;
-        if (type.contains("green_banner")) return MapDecorationTypes.BANNER_GREEN;
-        if (type.contains("red_banner")) return MapDecorationTypes.BANNER_RED;
+        if (type.contains("white_banner")) return MapDecorationTypes.WHITE_BANNER;
+        if (type.contains("orange_banner")) return MapDecorationTypes.ORANGE_BANNER;
+        if (type.contains("magenta_banner")) return MapDecorationTypes.MAGENTA_BANNER;
+        if (type.contains("light_blue_banner")) return MapDecorationTypes.LIGHT_BLUE_BANNER;
+        if (type.contains("yellow_banner")) return MapDecorationTypes.YELLOW_BANNER;
+        if (type.contains("lime_banner")) return MapDecorationTypes.LIME_BANNER;
+        if (type.contains("pink_banner")) return MapDecorationTypes.PINK_BANNER;
+        if (type.contains("gray_banner")) return MapDecorationTypes.GRAY_BANNER;
+        if (type.contains("light_gray_banner")) return MapDecorationTypes.LIGHT_GRAY_BANNER;
+        if (type.contains("cyan_banner")) return MapDecorationTypes.CYAN_BANNER;
+        if (type.contains("purple_banner")) return MapDecorationTypes.PURPLE_BANNER;
+        if (type.contains("blue_banner")) return MapDecorationTypes.BLUE_BANNER;
+        if (type.contains("brown_banner")) return MapDecorationTypes.BROWN_BANNER;
+        if (type.contains("green_banner")) return MapDecorationTypes.GREEN_BANNER;
+        if (type.contains("red_banner")) return MapDecorationTypes.RED_BANNER;
 
         if (type.contains("player")) return MapDecorationTypes.PLAYER;
         if (type.contains("frame")) return MapDecorationTypes.FRAME;
@@ -243,18 +243,18 @@ public class MapStateMixin implements MapStateAccessor {
         if (type.contains("outpost")) return ExplorationRegistries.OUTPOST;
         if (type.contains("portal")) return ExplorationRegistries.RUINED_PORTAL;
 
-        return MapDecorationTypes.BANNER_BLACK;
+        return MapDecorationTypes.BLACK_BANNER;
     }
 
     @Unique
-    private RegistryEntry<MapDecorationType> getMapTypeLimited(String type) {
-        if (type.contains("woodland_mansion")) return MapDecorationTypes.MANSION;
-        if (type.contains("ocean_monument")) return MapDecorationTypes.MONUMENT;
-        if (type.contains("desert_village")) return MapDecorationTypes.VILLAGE_DESERT;
-        if (type.contains("plains_village")) return MapDecorationTypes.VILLAGE_PLAINS;
-        if (type.contains("savanna_village")) return MapDecorationTypes.VILLAGE_SAVANNA;
-        if (type.contains("snowy_village")) return MapDecorationTypes.VILLAGE_SNOWY;
-        if (type.contains("taiga_village")) return MapDecorationTypes.VILLAGE_TAIGA;
+    private Holder<MapDecorationType> getMapTypeLimited(String type) {
+        if (type.contains("woodland_mansion")) return MapDecorationTypes.WOODLAND_MANSION;
+        if (type.contains("ocean_monument")) return MapDecorationTypes.OCEAN_MONUMENT;
+        if (type.contains("desert_village")) return MapDecorationTypes.DESERT_VILLAGE;
+        if (type.contains("plains_village")) return MapDecorationTypes.PLAINS_VILLAGE;
+        if (type.contains("savanna_village")) return MapDecorationTypes.SAVANNA_VILLAGE;
+        if (type.contains("snowy_village")) return MapDecorationTypes.SNOWY_VILLAGE;
+        if (type.contains("taiga_village")) return MapDecorationTypes.TAIGA_VILLAGE;
         if (type.contains("jungle_temple")) return MapDecorationTypes.JUNGLE_TEMPLE;
         if (type.contains("swamp_hut")) return MapDecorationTypes.SWAMP_HUT;
         if (type.contains("trial_chambers")) return MapDecorationTypes.TRIAL_CHAMBERS;

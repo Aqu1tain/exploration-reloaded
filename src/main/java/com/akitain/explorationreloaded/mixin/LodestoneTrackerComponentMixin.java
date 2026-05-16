@@ -2,16 +2,16 @@ package com.akitain.explorationreloaded.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.component.type.LodestoneTrackerComponent;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.component.LodestoneTracker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin(LodestoneTrackerComponent.class)
+@Mixin(LodestoneTracker.class)
 public class LodestoneTrackerComponentMixin {
-    @ModifyExpressionValue(method = "forWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/poi/PointOfInterestStorage;hasTypeAt(Lnet/minecraft/registry/RegistryKey;Lnet/minecraft/util/math/BlockPos;)Z"))
-    private boolean trackUnloadedChunks(boolean original, @Local(argsOnly = true) ServerWorld world, @Local BlockPos blockPos) {
-        return original || !world.isChunkLoaded(blockPos);
+    @ModifyExpressionValue(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/ai/village/poi/PoiManager;existsAtPosition(Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/core/BlockPos;)Z"))
+    private boolean trackUnloadedChunks(boolean original, @Local(argsOnly = true) ServerLevel world, @Local BlockPos blockPos) {
+        return original || !world.hasChunkAt(blockPos);
     }
 }

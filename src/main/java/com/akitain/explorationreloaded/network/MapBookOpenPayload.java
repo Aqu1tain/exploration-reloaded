@@ -1,24 +1,24 @@
 package com.akitain.explorationreloaded.network;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.world.item.ItemStack;
 import com.akitain.explorationreloaded.ExplorationReloaded;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
 
-public record MapBookOpenPayload(ItemStack itemStack) implements CustomPayload {
-    public static final Id<MapBookOpenPayload> PACKET_ID = new Id<>(ExplorationReloaded.id("map_book_open"));
+public record MapBookOpenPayload(ItemStack itemStack) implements CustomPacketPayload {
+    public static final Type<MapBookOpenPayload> PACKET_ID = new Type<>(ExplorationReloaded.id("map_book_open"));
 
-    public static final PacketCodec<RegistryByteBuf, MapBookOpenPayload> PACKET_CODEC = PacketCodec.tuple(
-            ItemStack.PACKET_CODEC,
+    public static final StreamCodec<RegistryFriendlyByteBuf, MapBookOpenPayload> PACKET_CODEC = StreamCodec.composite(
+            ItemStack.STREAM_CODEC,
             MapBookOpenPayload::itemStack,
             MapBookOpenPayload::new
     );
 
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return PACKET_ID;
     }
 

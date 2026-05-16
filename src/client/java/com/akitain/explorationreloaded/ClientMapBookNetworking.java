@@ -8,8 +8,8 @@ import com.akitain.explorationreloaded.registry.item.MapBookState;
 import com.akitain.explorationreloaded.registry.item.MapBookStateManager;
 import com.akitain.explorationreloaded.registry.item.MapStateAccessor;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.item.map.MapState;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 import java.util.ArrayList;
 
@@ -44,10 +44,10 @@ public final class ClientMapBookNetworking {
 
     private static void mapPosition(MapPositionPayload payload, ClientPlayNetworking.Context context) {
         context.client().execute(() -> {
-            ClientWorld world = context.client().world;
+            ClientLevel world = context.client().level;
             if (world == null) return;
 
-            MapState mapState = world.getMapState(payload.mapIdComponent());
+            MapItemSavedData mapState = world.getMapData(payload.mapIdComponent());
             if (mapState == null) return;
 
             ((MapStateAccessor) mapState).explorationReloaded$setPosition(payload.centerX(), payload.centerZ());

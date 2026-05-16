@@ -1,15 +1,15 @@
 package com.akitain.explorationreloaded.mixin.client.map;
 
-import net.minecraft.client.render.entity.ItemFrameEntityRenderer;
+import net.minecraft.client.renderer.entity.ItemFrameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-@Mixin(ItemFrameEntityRenderer.class)
+@Mixin(ItemFrameRenderer.class)
 public class ItemFrameEntityRendererMixin {
-    @ModifyArg(method = "render(Lnet/minecraft/client/render/entity/state/ItemFrameEntityRenderState;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;Lnet/minecraft/client/render/state/CameraRenderState;)V",
+    @ModifyArg(method = "submit(Lnet/minecraft/client/renderer/entity/state/ItemFrameRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V",
                at = @At(value = "INVOKE",
-                        target = "Lnet/minecraft/client/render/MapRenderer;draw(Lnet/minecraft/client/render/MapRenderState;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;ZI)V"
+                        target = "Lnet/minecraft/client/renderer/MapRenderer;render(Lnet/minecraft/client/renderer/state/MapRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;ZI)V"
                ), index = 3)
     private boolean showIconsOnItemFrameMap(boolean hidePlayerIcons){
         return false;

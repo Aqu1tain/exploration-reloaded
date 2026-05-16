@@ -1,9 +1,5 @@
 package com.akitain.explorationreloaded.mixin;
 
-import net.minecraft.entity.attribute.EntityAttributeInstance;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.mob.ZombieHorseEntity;
-import net.minecraft.util.math.random.Random;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,21 +10,25 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Objects;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntUnaryOperator;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.equine.ZombieHorse;
 
-@Mixin(ZombieHorseEntity.class)
+@Mixin(ZombieHorse.class)
 public abstract class ZombieHorseEntityMixin {
-    @Inject(method = "initAttributes", at = @At("TAIL"))
-    private void randomiseAttributes(Random random, CallbackInfo ci) {
-        ZombieHorseEntity horse = (ZombieHorseEntity) (Object) this;
-        EntityAttributeInstance health = Objects.requireNonNull(horse.getAttributeInstance(EntityAttributes.MAX_HEALTH));
+    @Inject(method = "randomizeReinforcementsChance", at = @At("TAIL"))
+    private void randomiseAttributes(RandomSource random, CallbackInfo ci) {
+        ZombieHorse horse = (ZombieHorse) (Object) this;
+        AttributeInstance health = Objects.requireNonNull(horse.getAttribute(Attributes.MAX_HEALTH));
         health.setBaseValue(getChildHealthBonus(random::nextInt));
 
-        EntityAttributeInstance movementSpeed = Objects.requireNonNull(horse.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED));
+        AttributeInstance movementSpeed = Objects.requireNonNull(horse.getAttribute(Attributes.MOVEMENT_SPEED));
         movementSpeed.setBaseValue(getChildMovementSpeedBonus(random::nextDouble));
     }
 
-    @Redirect(method = "interactMob", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/mob/ZombieHorseEntity;isTame()Z"))
-    private boolean allowRiding(ZombieHorseEntity horse) {
+    @Redirect(method = "mobInteract", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/animal/equine/ZombieHorse;isTamed()Z"))
+    private boolean allowRiding(ZombieHorse horse) {
         return true;
     }
 

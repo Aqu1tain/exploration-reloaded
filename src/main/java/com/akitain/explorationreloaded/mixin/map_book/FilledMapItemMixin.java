@@ -3,57 +3,57 @@ package com.akitain.explorationreloaded.mixin.map_book;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.MapColor;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.registry.tag.BiomeTags;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BiomeTags;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.MapColor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(FilledMapItem.class)
+@Mixin(MapItem.class)
 public class FilledMapItemMixin  {
 
     @Unique
     boolean tinted = false;
 
-    @ModifyExpressionValue(method = "updateColors", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/dimension/DimensionType;hasCeiling()Z"))
+    @ModifyExpressionValue(method = "update", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/dimension/DimensionType;hasCeiling()Z"))
     private boolean updateNetherColours(boolean original) {
         tinted = false;
         return false;
     }
 
 
-    @ModifyExpressionValue(method = "updateColors", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/WorldChunk;getBlockState(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/block/BlockState;"))
+    @ModifyExpressionValue(method = "update", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/LevelChunk;getBlockState(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;"))
     private BlockState tryUseDarkestValue(BlockState original) {
-        if (original.isOf(Blocks.TINTED_GLASS)) tinted = true;
+        if (original.is(Blocks.TINTED_GLASS)) tinted = true;
         return original;
     }
 
-    @ModifyArg(method = "updateColors", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/MapColor;getRenderColorByte(Lnet/minecraft/block/MapColor$Brightness;)B"))
+    @ModifyArg(method = "update", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/material/MapColor;getPackedId(Lnet/minecraft/world/level/material/MapColor$Brightness;)B"))
     private MapColor.Brightness tryUseDarkestValue(MapColor.Brightness brightness) {
         if (tinted) return MapColor.Brightness.LOWEST;
         return brightness;
     }
 
-    @Redirect(method = "updateColors", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;getMapColor(Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/block/MapColor;", ordinal = 3))
-    private MapColor biomeColours(BlockState instance, BlockView blockView, BlockPos blockPos, @Local(argsOnly = true) World world) {
-        if (instance.isOf(Blocks.GRASS_BLOCK)){
-            if (world.getBiome(blockPos).isIn(BiomeTags.IS_SAVANNA)) {
+    @Redirect(method = "update", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getMapColor(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/material/MapColor;", ordinal = 3))
+    private MapColor biomeColours(BlockState instance, BlockGetter blockView, BlockPos blockPos, @Local(argsOnly = true) Level world) {
+        if (instance.is(Blocks.GRASS_BLOCK)){
+            if (world.getBiome(blockPos).is(BiomeTags.IS_SAVANNA)) {
                 return MapColor.TERRACOTTA_YELLOW;
             }
-            if (world.getBiome(blockPos).isIn(BiomeTags.SWAMP_HUT_HAS_STRUCTURE)) {
-                return MapColor.DARK_GREEN;
+            if (world.getBiome(blockPos).is(BiomeTags.HAS_SWAMP_HUT)) {
+                return MapColor.PLANT;
             }
         }
-        if (instance.isOf(Blocks.OAK_LEAVES) || instance.isOf(Blocks.VINE)){
-            if (world.getBiome(blockPos).isIn(BiomeTags.SWAMP_HUT_HAS_STRUCTURE)) {
+        if (instance.is(Blocks.OAK_LEAVES) || instance.is(Blocks.VINE)){
+            if (world.getBiome(blockPos).is(BiomeTags.HAS_SWAMP_HUT)) {
                 return MapColor.TERRACOTTA_GREEN;
             }
         }

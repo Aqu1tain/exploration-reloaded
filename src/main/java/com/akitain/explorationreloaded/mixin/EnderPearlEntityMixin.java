@@ -2,22 +2,6 @@ package com.akitain.explorationreloaded.mixin;
 
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
-import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.thrown.EnderPearlEntity;
-import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.s2c.play.PositionFlag;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.TeleportTarget;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -27,20 +11,36 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Objects;
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec3;
 
-@Mixin(EnderPearlEntity.class)
-public abstract class EnderPearlEntityMixin extends ThrownItemEntity {
+@Mixin(ThrownEnderpearl.class)
+public abstract class EnderPearlEntityMixin extends ThrowableItemProjectile {
     @Unique
     @Nullable
     private LivingEntity vehicle = null;
 
-    public EnderPearlEntityMixin(EntityType<? extends ThrownItemEntity> entityType, World world) {
+    public EnderPearlEntityMixin(EntityType<? extends ThrowableItemProjectile> entityType, Level world) {
         super(entityType, world);
     }
 
-    @Inject(method = "<init>(Lnet/minecraft/world/World;Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/item/ItemStack;)V", at = @At("TAIL"))
-    private void saveThrownVehicle(World world, LivingEntity owner, ItemStack stack, CallbackInfo ci) {
-        if (!owner.hasVehicle()) {
+    @Inject(method = "<init>(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;)V", at = @At("TAIL"))
+    private void saveThrownVehicle(Level world, LivingEntity owner, ItemStack stack, CallbackInfo ci) {
+        if (!owner.isPassenger()) {
             return;
         }
 
@@ -50,60 +50,60 @@ public abstract class EnderPearlEntityMixin extends ThrownItemEntity {
         }
     }
 
-    @Redirect(method = "onCollision", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerPlayerEntity;teleportTo(Lnet/minecraft/world/TeleportTarget;)Lnet/minecraft/server/network/ServerPlayerEntity;"))
-    private ServerPlayerEntity teleportWithVehicle(ServerPlayerEntity player, TeleportTarget target, @Share("passed") LocalBooleanRef ref) {
-        Criteria.CONSUME_ITEM.trigger(player, Items.ENDER_PEARL.getDefaultStack());
-        if (player.hasVehicle()) {
+    @Redirect(method = "onHit", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;teleport(Lnet/minecraft/world/level/portal/TeleportTransition;)Lnet/minecraft/server/level/ServerPlayer;"))
+    private ServerPlayer teleportWithVehicle(ServerPlayer player, TeleportTransition target, @Share("passed") LocalBooleanRef ref) {
+        CriteriaTriggers.CONSUME_ITEM.trigger(player, Items.ENDER_PEARL.getDefaultInstance());
+        if (player.isPassenger()) {
             LivingEntity currentVehicle = rootVehicle(player);
             if (currentVehicle != null && currentVehicle.equals(this.vehicle)) {
                 return teleportMatchingVehicle(player, currentVehicle, ref);
             }
         }
 
-        return player.teleportTo(new TeleportTarget(
-                (ServerWorld) this.getEntityWorld(),
-                this.getLastRenderPos(),
-                Vec3d.ZERO,
+        return player.teleport(new TeleportTransition(
+                (ServerLevel) this.level(),
+                this.oldPosition(),
+                Vec3.ZERO,
                 0.0F,
                 0.0F,
-                PositionFlag.combine(PositionFlag.ROT, PositionFlag.DELTA),
-                TeleportTarget.NO_OP
+                Relative.union(Relative.ROTATION, Relative.DELTA),
+                TeleportTransition.DO_NOTHING
         ));
     }
 
     @Unique
-    private ServerPlayerEntity teleportMatchingVehicle(ServerPlayerEntity player, LivingEntity currentVehicle, LocalBooleanRef ref) {
-        currentVehicle.teleportTo(new TeleportTarget(
-                (ServerWorld) this.getEntityWorld(),
-                this.getLastRenderPos(),
-                Vec3d.ZERO,
+    private ServerPlayer teleportMatchingVehicle(ServerPlayer player, LivingEntity currentVehicle, LocalBooleanRef ref) {
+        currentVehicle.teleport(new TeleportTransition(
+                (ServerLevel) this.level(),
+                this.oldPosition(),
+                Vec3.ZERO,
                 0.0F,
                 0.0F,
-                PositionFlag.combine(PositionFlag.ROT, PositionFlag.DELTA),
-                TeleportTarget.NO_OP
+                Relative.union(Relative.ROTATION, Relative.DELTA),
+                TeleportTransition.DO_NOTHING
         ));
-        currentVehicle.addCommandTag("tp");
+        currentVehicle.addTag("tp");
 
-        if (currentVehicle instanceof PathAwareEntity pathAwareEntity) {
+        if (currentVehicle instanceof PathfinderMob pathAwareEntity) {
             pathAwareEntity.getNavigation().stop();
         }
 
-        currentVehicle.onLanding();
-        EnderPearlEntity pearl = (EnderPearlEntity) (Object) this;
-        PlayerEntity owner = (PlayerEntity) Objects.requireNonNull(pearl.getOwner());
-        if (!owner.getAbilities().creativeMode) {
-            currentVehicle.damage((ServerWorld) this.getEntityWorld(), this.getDamageSources().fall(), 5.0F);
+        currentVehicle.resetFallDistance();
+        ThrownEnderpearl pearl = (ThrownEnderpearl) (Object) this;
+        Player owner = (Player) Objects.requireNonNull(pearl.getOwner());
+        if (!owner.getAbilities().instabuild) {
+            currentVehicle.hurtServer((ServerLevel) this.level(), this.damageSources().fall(), 5.0F);
         }
         ref.set(true);
 
-        ServerPlayerEntity teleportedPlayer = player.teleportTo(new TeleportTarget(
-                (ServerWorld) this.getEntityWorld(),
-                this.getLastRenderPos(),
-                Vec3d.ZERO,
+        ServerPlayer teleportedPlayer = player.teleport(new TeleportTransition(
+                (ServerLevel) this.level(),
+                this.oldPosition(),
+                Vec3.ZERO,
                 0.0F,
                 0.0F,
-                PositionFlag.combine(PositionFlag.ROT, PositionFlag.DELTA),
-                TeleportTarget.NO_OP
+                Relative.union(Relative.ROTATION, Relative.DELTA),
+                TeleportTransition.DO_NOTHING
         ));
         assert teleportedPlayer != null;
         teleportedPlayer.startRiding(currentVehicle);
@@ -113,7 +113,7 @@ public abstract class EnderPearlEntityMixin extends ThrownItemEntity {
     @Unique
     @Nullable
     private LivingEntity rootVehicle(Entity entity) {
-        if (!entity.hasVehicle() || !(entity.getVehicle() instanceof LivingEntity vehicleEntity)) {
+        if (!entity.isPassenger() || !(entity.getVehicle() instanceof LivingEntity vehicleEntity)) {
             return null;
         }
 

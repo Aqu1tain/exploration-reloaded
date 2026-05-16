@@ -1,27 +1,27 @@
 package com.akitain.explorationreloaded.mixin;
 
 import com.akitain.explorationreloaded.ExplorationReloaded;
-import net.minecraft.loot.LootTable;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.structure.EndCityGenerator;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.levelgen.structure.structures.EndCityPieces;
+import net.minecraft.world.level.storage.loot.LootTable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-@Mixin(EndCityGenerator.Piece.class)
+@Mixin(EndCityPieces.EndCityPiece.class)
 public class EndCityGeneratorPieceMixin {
-    private static final RegistryKey<LootTable> END_SHIP_LOOT_TABLE = RegistryKey.of(RegistryKeys.LOOT_TABLE, ExplorationReloaded.id("end_ship_loot"));
+    private static final ResourceKey<LootTable> END_SHIP_LOOT_TABLE = ResourceKey.create(Registries.LOOT_TABLE, ExplorationReloaded.id("end_ship_loot"));
 
     @Shadow
     @Final
-    protected String templateIdString;
+    protected String templateName;
 
-    @ModifyArg(method = "handleMetadata", at = @At(value = "INVOKE", target = "Lnet/minecraft/inventory/LootableInventory;setLootTable(Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/random/Random;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/registry/RegistryKey;)V"), index = 3)
-    private RegistryKey<LootTable> useEndShipLootTable(RegistryKey<LootTable> lootTable) {
-        if (!"ship".equals(this.templateIdString)) {
+    @ModifyArg(method = "handleDataMarker", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/RandomizableContainer;setBlockEntityLootTable(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/util/RandomSource;Lnet/minecraft/core/BlockPos;Lnet/minecraft/resources/ResourceKey;)V"), index = 3)
+    private ResourceKey<LootTable> useEndShipLootTable(ResourceKey<LootTable> lootTable) {
+        if (!"ship".equals(this.templateName)) {
             return lootTable;
         }
 

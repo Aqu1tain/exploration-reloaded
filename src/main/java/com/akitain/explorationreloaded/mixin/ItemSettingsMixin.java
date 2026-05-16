@@ -1,42 +1,42 @@
 package com.akitain.explorationreloaded.mixin;
 
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.AttributeModifiersComponent;
-import net.minecraft.component.type.EquippableComponent;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.Item;
-import net.minecraft.item.equipment.ArmorMaterial;
-import net.minecraft.item.equipment.EquipmentType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryEntryLookup;
-import net.minecraft.registry.tag.EntityTypeTags;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.equipment.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.minecraft.world.item.equipment.Equippable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(Item.Settings.class)
+@Mixin(Item.Properties.class)
 public abstract class ItemSettingsMixin {
     @Shadow
-    public abstract Item.Settings attributeModifiers(AttributeModifiersComponent attributeModifiersComponent);
+    public abstract Item.Properties attributes(ItemAttributeModifiers attributeModifiersComponent);
 
     @Inject(method = "horseArmor", at = @At("HEAD"), cancellable = true)
-    private void makeHorseArmorEnchantable(ArmorMaterial material, CallbackInfoReturnable<Item.Settings> cir) {
-        RegistryEntryLookup<EntityType<?>> entityTypes = Registries.createEntryLookup(Registries.ENTITY_TYPE);
-        cir.setReturnValue(this.attributeModifiers(material.createAttributeModifiers(EquipmentType.BODY))
+    private void makeHorseArmorEnchantable(ArmorMaterial material, CallbackInfoReturnable<Item.Properties> cir) {
+        HolderGetter<EntityType<?>> entityTypes = BuiltInRegistries.acquireBootstrapRegistrationLookup(BuiltInRegistries.ENTITY_TYPE);
+        cir.setReturnValue(this.attributes(material.createAttributes(ArmorType.BODY))
                 .component(
-                        DataComponentTypes.EQUIPPABLE,
-                        EquippableComponent.builder(EquipmentSlot.BODY)
-                                .equipSound(SoundEvents.ENTITY_HORSE_ARMOR)
-                                .model(material.assetId())
-                                .allowedEntities(entityTypes.getOrThrow(EntityTypeTags.CAN_WEAR_HORSE_ARMOR))
-                                .damageOnHurt(false)
+                        DataComponents.EQUIPPABLE,
+                        Equippable.builder(EquipmentSlot.BODY)
+                                .setEquipSound(SoundEvents.HORSE_ARMOR)
+                                .setAsset(material.assetId())
+                                .setAllowedEntities(entityTypes.getOrThrow(EntityTypeTags.CAN_WEAR_HORSE_ARMOR))
+                                .setDamageOnHurt(false)
                                 .build()
                 )
                 .enchantable(1)
-                .maxCount(1));
+                .stacksTo(1));
     }
 }

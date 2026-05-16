@@ -1,35 +1,35 @@
 package com.akitain.explorationreloaded.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.entity.Entity;
-import net.minecraft.loot.context.LootContext;
-import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.loot.function.ApplyBonusLootFunction;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.LightType;
-import net.minecraft.world.MoonPhase;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.attribute.EnvironmentAttributes;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.MoonPhase;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-@Mixin(ApplyBonusLootFunction.class)
+@Mixin(ApplyBonusCount.class)
 public class ApplyBonusLootFunctionMixin {
-    @ModifyVariable(method = "process", at = @At("STORE"), ordinal = 0)
+    @ModifyVariable(method = "run", at = @At("STORE"), ordinal = 0)
     private int nightFortune(int fortuneLevel, @Local(argsOnly = true) LootContext context) {
-        Entity entity = context.get(LootContextParameters.THIS_ENTITY);
-        if (!(entity instanceof ServerPlayerEntity)) {
+        Entity entity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
+        if (!(entity instanceof ServerPlayer)) {
             return fortuneLevel;
         }
 
-        World world = entity.getEntityWorld();
-        if (world.getLightLevel(LightType.SKY, entity.getBlockPos()) <= 10) {
+        Level world = entity.level();
+        if (world.getBrightness(LightLayer.SKY, entity.blockPosition()) <= 10) {
             return fortuneLevel;
         }
 
-        MoonPhase moonPhase = world.getEnvironmentAttributes().getAttributeValue(EnvironmentAttributes.MOON_PHASE_VISUAL, entity.getBlockPos());
-        if (world.isNight() && moonPhase.getIndex() == 6) {
+        MoonPhase moonPhase = world.environmentAttributes().getValue(EnvironmentAttributes.MOON_PHASE, entity.blockPosition());
+        if (world.isDarkOutside() && moonPhase.index() == 6) {
             return fortuneLevel + 1;
         }
         return fortuneLevel;

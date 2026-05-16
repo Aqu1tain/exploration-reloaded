@@ -1,11 +1,11 @@
 package com.akitain.explorationreloaded;
 
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeKeys;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 
 public final class ExplorationCustomData {
-    public static RegistryKey<Biome> biomeSearch = BiomeKeys.FOREST;
+    public static ResourceKey<Biome> biomeSearch = Biomes.FOREST;
 
     private ExplorationCustomData() {
     }
