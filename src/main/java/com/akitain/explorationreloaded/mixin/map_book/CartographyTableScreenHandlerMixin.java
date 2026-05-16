@@ -16,7 +16,6 @@ import net.minecraft.world.inventory.CartographyTableMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
@@ -146,8 +145,8 @@ public class CartographyTableScreenHandlerMixin {
     }
 
     @Redirect(method = "quickMoveStack",
-              at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Lnet/minecraft/world/item/Item;)Z", ordinal = 0))
-    private boolean bookQuickMove(ItemStack instance, Item item){
+              at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Ljava/lang/Object;)Z", ordinal = 0))
+    private boolean bookQuickMove(ItemStack instance, Object item){
         return instance.is(Items.PAPER) || instance.is(Items.BOOK);
     }
 
