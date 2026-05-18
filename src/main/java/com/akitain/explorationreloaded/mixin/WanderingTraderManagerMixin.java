@@ -27,14 +27,9 @@ import net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.storage.ServerLevelData;
 
 @Mixin(WanderingTraderSpawner.class)
 public abstract class WanderingTraderManagerMixin {
-    @Shadow
-    @Final
-    private ServerLevelData serverLevelData;
-
     @Shadow
     @Final
     private RandomSource random;
