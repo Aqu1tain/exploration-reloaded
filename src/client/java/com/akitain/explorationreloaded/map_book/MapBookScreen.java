@@ -36,6 +36,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
 public class MapBookScreen extends Screen {
+    private static final float MIN_SCALE = 0.005f;
+    private static final float MAX_SCALE = 10.0f;
+    private static final float ZOOM_STEP = 1.15f;
+    private static final double MAX_SCROLL_DELTA = 4.0;
+
     ItemStack item;
     public float x = 0.0f;
     public float y = 0.0f;
@@ -117,10 +122,12 @@ public class MapBookScreen extends Screen {
     }
 
     @Override public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (verticalAmount != 0.0) {
-            targetScale = zoom(scale, (float) -verticalAmount);
+        if (verticalAmount == 0.0) {
+            return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+
+        targetScale = zoom(targetScale, verticalAmount);
+        return true;
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
@@ -370,11 +377,9 @@ public class MapBookScreen extends Screen {
         scale = newScale;
     }
 
-    private float zoom(float start, float scroll) {
-        float absScroll = Math.abs(scroll);
-        float speed = 5.0f;
-        float newZoom =  scroll > 0 ? start - (start / (scroll * speed)) : (start * absScroll * speed) / (absScroll * speed - 1);
-        newZoom = Math.min(Math.max(newZoom, 0.005f), 10f);
-        return newZoom;
+    private float zoom(float start, double scroll) {
+        double boundedScroll = Mth.clamp(scroll, -MAX_SCROLL_DELTA, MAX_SCROLL_DELTA);
+        double zoomMultiplier = Math.pow(ZOOM_STEP, boundedScroll);
+        return Mth.clamp((float) (start * zoomMultiplier), MIN_SCALE, MAX_SCALE);
     }
 }
