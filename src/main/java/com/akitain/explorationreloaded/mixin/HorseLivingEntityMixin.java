@@ -2,7 +2,6 @@ package com.akitain.explorationreloaded.mixin;
 
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -22,30 +21,25 @@ public abstract class HorseLivingEntityMixin {
     @ModifyConstant(method = "getVisibilityPercent", constant = @Constant(doubleValue = 1.0))
     private double makeZombieHorseSneaky(double constant) {
         LivingEntity entity = (LivingEntity) (Object) this;
-        Entity vehicle = entity.getVehicle();
-        if (vehicle instanceof ZombieHorse) {
-            return 0.5;
-        }
-        return 1.0;
+        return entity.getVehicle() instanceof ZombieHorse ? 0.5 : 1.0;
     }
 
     @Inject(method = "canUseSlot", at = @At("HEAD"), cancellable = true)
     private void allowMuleArmorSlot(EquipmentSlot slot, CallbackInfoReturnable<Boolean> cir) {
-        LivingEntity entity = (LivingEntity) (Object) this;
-        if (entity instanceof Mule) {
+        if ((Object) this instanceof Mule) {
             cir.setReturnValue(true);
         }
     }
 
     @Inject(method = "makeWaypointConnectionWith", at = @At("HEAD"), cancellable = true)
     private void onlyOwnerSeesHorseIcon(ServerPlayer player, CallbackInfoReturnable<Optional<WaypointTransmitter.Connection>> cir) {
-        LivingEntity entity = (LivingEntity) (Object) this;
-        if (!(entity instanceof AbstractHorse horse)) {
+        if (!((Object) this instanceof AbstractHorse horse)) {
             return;
         }
 
         EntityReference<LivingEntity> owner = horse.getOwnerReference();
-        if (owner == null || !owner.matches(player) || horse.hasPassenger(player)) {
+        boolean playerIsOwner = owner != null && owner.matches(player);
+        if (!playerIsOwner || horse.hasPassenger(player)) {
             cir.setReturnValue(Optional.empty());
         }
     }

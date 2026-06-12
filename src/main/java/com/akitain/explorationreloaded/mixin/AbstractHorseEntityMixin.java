@@ -43,9 +43,26 @@ import net.minecraft.world.phys.Vec3;
 @Mixin(AbstractHorse.class)
 public class AbstractHorseEntityMixin {
     @Unique
+    private static final int ARMOR_SLOT = 1;
+    @Unique
+    private static final String LOCATE_TAG = "locate";
+    @Unique
+    private static final double LOCATOR_TRANSMIT_RANGE = 100;
+    @Unique
+    private static final int LOCATOR_TIMEOUT_TICKS = 20 * 60 * 5;
+    @Unique
+    private static final double RIDDEN_WALK_SPEED_CAP = 0.1;
+
+    @Unique
     private static final Map<Item, Float> RAGE_CHANCE = new Object2FloatArrayMap<>();
     @Unique
-    private static final Map<Holder<MobEffect>, String> EFFECT_MODIFIERS = new Object2ObjectArrayMap<>();
+    private static final Map<Holder<MobEffect>, String> EFFECT_ATTRIBUTES = new Object2ObjectArrayMap<>();
+    @Unique
+    private static final Map<String, Double> ATTRIBUTE_BONUSES = Map.of(
+            "max_health", 2.0,
+            "jump_strength", 0.08,
+            "movement_speed", 0.03
+    );
 
     @Shadow
     protected SimpleContainer inventory;
@@ -59,16 +76,17 @@ public class AbstractHorseEntityMixin {
         RAGE_CHANCE.put(Items.COPPER_HORSE_ARMOR, 0.45F);
         RAGE_CHANCE.put(Items.LEATHER_HORSE_ARMOR, 0.3F);
 
-        EFFECT_MODIFIERS.put(MobEffects.SPEED, "movement_speed");
-        EFFECT_MODIFIERS.put(MobEffects.JUMP_BOOST, "jump_strength");
-        EFFECT_MODIFIERS.put(MobEffects.REGENERATION, "max_health");
+        EFFECT_ATTRIBUTES.put(MobEffects.SPEED, "movement_speed");
+        EFFECT_ATTRIBUTES.put(MobEffects.JUMP_BOOST, "jump_strength");
+        EFFECT_ATTRIBUTES.put(MobEffects.REGENERATION, "max_health");
     }
 
     @Inject(method = "standIfPossible", at = @At("HEAD"), cancellable = true)
     private void rejectAngryWhenArmored(CallbackInfo ci) {
-        ItemStack armor = this.inventory.getItem(1);
+        ItemStack armor = this.inventory.getItem(ARMOR_SLOT);
         float chance = RAGE_CHANCE.getOrDefault(armor.getItem(), 0F);
-        if (chance > 0 && chance < 1 || Math.random() <= chance) {
+        boolean staysCalm = (chance > 0 && chance < 1) || Math.random() <= chance;
+        if (staysCalm) {
             ci.cancel();
         }
     }
@@ -76,43 +94,24 @@ public class AbstractHorseEntityMixin {
     @ModifyArg(method = "setOffspringAttribute", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/animal/equine/AbstractHorse;createOffspringAttribute(DDDDLnet/minecraft/util/RandomSource;)D"), index = 0)
     private double modifyFirstParentAttribute(double original, @Local(argsOnly = true) Holder<Attribute> attribute) {
         AgeableMob parent = (AgeableMob) (Object) this;
-        return modifyAttribute(original, attribute.value(), parent.getActiveEffects());
+        return applyParentEffectBonus(original, attribute.value(), parent.getActiveEffects());
     }
 
     @ModifyArg(method = "setOffspringAttribute", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/animal/equine/AbstractHorse;createOffspringAttribute(DDDDLnet/minecraft/util/RandomSource;)D"), index = 1)
     private double modifySecondParentAttribute(double original, @Local(argsOnly = true) Holder<Attribute> attribute, @Local(argsOnly = true) AgeableMob otherParent) {
-        return modifyAttribute(original, attribute.value(), otherParent.getActiveEffects());
+        return applyParentEffectBonus(original, attribute.value(), otherParent.getActiveEffects());
     }
 
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/animal/equine/AbstractHorse;isStanding()Z"))
-    private void limitWalkingSpeedAndHorseLocator(CallbackInfo ci) {
+    private void onTick(CallbackInfo ci) {
         AbstractHorse horse = (AbstractHorse) (Object) this;
-        if (horse.hasControllingPassenger() && horse.onGround() && !horse.getControllingPassenger().isSprinting()) {
-            Vec3 velocity = horse.getDeltaMovement();
-            double horizontalSpeed = velocity.horizontalDistance();
-            if (horizontalSpeed > 0.01) {
-                double limitedSpeed = Math.min(0.1, horizontalSpeed);
-                horse.setDeltaMovement(limitedSpeed * velocity.x / horizontalSpeed, velocity.y, limitedSpeed * velocity.z / horizontalSpeed);
-            }
-        }
-
+        limitWalkingSpeed(horse);
         horse.refreshDimensions();
-        if (!horse.entityTags().contains("locate")) {
-            return;
-        }
-
-        if (horse.tickCount > 20 * 60 * 5) {
-            horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(0);
-            horse.removeTag("locate");
-            return;
-        }
-
-        boolean hidden = horse.isLeashed() || horse.hasControllingPassenger();
-        horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(hidden ? 0 : 100);
+        tickLocatorSession(horse);
     }
 
     @Inject(method = "getDismountLocationForPassenger", at = @At("HEAD"))
-    private void addLocatorBarIcon(LivingEntity passenger, CallbackInfoReturnable<Vec3> cir) {
+    private void startLocatorOnDismount(LivingEntity passenger, CallbackInfoReturnable<Vec3> cir) {
         if (!(passenger instanceof ServerPlayer)) {
             return;
         }
@@ -123,54 +122,89 @@ public class AbstractHorseEntityMixin {
         }
 
         horse.tickCount = 0;
-        horse.addTag("locate");
-        horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(100);
+        horse.addTag(LOCATE_TAG);
+        setWaypointTransmitRange(horse, LOCATOR_TRANSMIT_RANGE);
+        applyHorseWaypointStyle(horse);
+    }
+
+    @Inject(method = "doPlayerRide", at = @At("HEAD"))
+    private void endLocatorOnRide(Player player, CallbackInfo ci) {
+        endLocatorSession((AbstractHorse) (Object) this);
+    }
+
+    @Unique
+    private static void limitWalkingSpeed(AbstractHorse horse) {
+        if (!horse.hasControllingPassenger() || !horse.onGround() || horse.getControllingPassenger().isSprinting()) {
+            return;
+        }
+
+        Vec3 velocity = horse.getDeltaMovement();
+        double horizontalSpeed = velocity.horizontalDistance();
+        if (horizontalSpeed <= 0.01) {
+            return;
+        }
+
+        double cappedSpeed = Math.min(RIDDEN_WALK_SPEED_CAP, horizontalSpeed);
+        horse.setDeltaMovement(cappedSpeed * velocity.x / horizontalSpeed, velocity.y, cappedSpeed * velocity.z / horizontalSpeed);
+    }
+
+    @Unique
+    private static void tickLocatorSession(AbstractHorse horse) {
+        if (!horse.entityTags().contains(LOCATE_TAG)) {
+            return;
+        }
+
+        if (horse.tickCount > LOCATOR_TIMEOUT_TICKS) {
+            endLocatorSession(horse);
+            return;
+        }
+
+        boolean hidden = horse.isLeashed() || horse.hasControllingPassenger();
+        setWaypointTransmitRange(horse, hidden ? 0 : LOCATOR_TRANSMIT_RANGE);
+    }
+
+    @Unique
+    private static void endLocatorSession(AbstractHorse horse) {
+        setWaypointTransmitRange(horse, 0);
+        horse.removeTag(LOCATE_TAG);
+    }
+
+    @Unique
+    private static void setWaypointTransmitRange(AbstractHorse horse, double range) {
+        horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(range);
+    }
+
+    @Unique
+    private static void applyHorseWaypointStyle(AbstractHorse horse) {
         String command = "/waypoint modify " + horse.getStringUUID() + " style set horse";
         horse.level().getServer().getCommands().performPrefixedCommand(createCommandSource((ServerLevel) horse.level(), horse.blockPosition()), command);
     }
 
-    @Inject(method = "doPlayerRide", at = @At("HEAD"))
-    private void removeLocatorBarIcon(Player player, CallbackInfo ci) {
-        AbstractHorse horse = (AbstractHorse) (Object) this;
-        horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(0);
-        horse.removeTag("locate");
-    }
-
     @Unique
-    private double modifyAttribute(double original, Attribute attribute, Collection<MobEffectInstance> effects) {
-        MobEffectInstance chosenEffect = getStatusEffectInstance(effects);
-        if (chosenEffect == null) {
+    private static double applyParentEffectBonus(double original, Attribute attribute, Collection<MobEffectInstance> effects) {
+        MobEffectInstance effect = strongestRelevantEffect(effects);
+        if (effect == null) {
             return original;
         }
 
-        String attributeModifier = EFFECT_MODIFIERS.get(chosenEffect.getEffect());
-        if (!attribute.getDescriptionId().contains(attributeModifier)) {
+        String attributeName = EFFECT_ATTRIBUTES.get(effect.getEffect());
+        if (!attribute.getDescriptionId().contains(attributeName)) {
             return original;
         }
 
-        double bonus = 0;
-        if (attribute.getDescriptionId().contains("max_health")) {
-            bonus = 2;
-        }
-        if (attribute.getDescriptionId().contains("jump_strength")) {
-            bonus = 0.08;
-        }
-        if (attribute.getDescriptionId().contains("movement_speed")) {
-            bonus = 0.03;
-        }
-        bonus *= chosenEffect.getAmplifier() + 1 + (chosenEffect.isAmbient() ? 0 : 1);
-        return original + bonus;
+        int potency = effect.getAmplifier() + 1 + (effect.isAmbient() ? 0 : 1);
+        return original + ATTRIBUTE_BONUSES.get(attributeName) * potency;
     }
 
     @Unique
     @Nullable
-    private static MobEffectInstance getStatusEffectInstance(Collection<MobEffectInstance> effects) {
+    private static MobEffectInstance strongestRelevantEffect(Collection<MobEffectInstance> effects) {
         MobEffectInstance chosenEffect = null;
         int longestDuration = -1;
         int highestLevel = -1;
 
         for (MobEffectInstance effect : effects) {
-            if (!EFFECT_MODIFIERS.containsKey(effect.getEffect())) {
+            if (!EFFECT_ATTRIBUTES.containsKey(effect.getEffect())) {
                 continue;
             }
 
