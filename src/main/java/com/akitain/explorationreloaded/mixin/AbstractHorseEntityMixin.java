@@ -43,9 +43,26 @@ import java.util.Map;
 @Mixin(AbstractHorseEntity.class)
 public class AbstractHorseEntityMixin {
     @Unique
+    private static final int ARMOR_SLOT = 1;
+    @Unique
+    private static final String LOCATE_TAG = "locate";
+    @Unique
+    private static final double LOCATOR_TRANSMIT_RANGE = 100;
+    @Unique
+    private static final int LOCATOR_TIMEOUT_TICKS = 20 * 60 * 5;
+    @Unique
+    private static final double RIDDEN_WALK_SPEED_CAP = 0.1;
+
+    @Unique
     private static final Map<Item, Float> RAGE_CHANCE = new Object2FloatArrayMap<>();
     @Unique
-    private static final Map<RegistryEntry<StatusEffect>, String> EFFECT_MODIFIERS = new Object2ObjectArrayMap<>();
+    private static final Map<RegistryEntry<StatusEffect>, String> EFFECT_ATTRIBUTES = new Object2ObjectArrayMap<>();
+    @Unique
+    private static final Map<String, Double> ATTRIBUTE_BONUSES = Map.of(
+            "max_health", 2.0,
+            "jump_strength", 0.08,
+            "movement_speed", 0.03
+    );
 
     @Shadow
     protected SimpleInventory items;
@@ -59,16 +76,17 @@ public class AbstractHorseEntityMixin {
         RAGE_CHANCE.put(Items.COPPER_HORSE_ARMOR, 0.45F);
         RAGE_CHANCE.put(Items.LEATHER_HORSE_ARMOR, 0.3F);
 
-        EFFECT_MODIFIERS.put(StatusEffects.SPEED, "movement_speed");
-        EFFECT_MODIFIERS.put(StatusEffects.JUMP_BOOST, "jump_strength");
-        EFFECT_MODIFIERS.put(StatusEffects.REGENERATION, "max_health");
+        EFFECT_ATTRIBUTES.put(StatusEffects.SPEED, "movement_speed");
+        EFFECT_ATTRIBUTES.put(StatusEffects.JUMP_BOOST, "jump_strength");
+        EFFECT_ATTRIBUTES.put(StatusEffects.REGENERATION, "max_health");
     }
 
     @Inject(method = "updateAnger", at = @At("HEAD"), cancellable = true)
     private void rejectAngryWhenArmored(CallbackInfo ci) {
-        ItemStack armor = this.items.getStack(1);
+        ItemStack armor = this.items.getStack(ARMOR_SLOT);
         float chance = RAGE_CHANCE.getOrDefault(armor.getItem(), 0F);
-        if (chance > 0 && chance < 1 || Math.random() <= chance) {
+        boolean staysCalm = (chance > 0 && chance < 1) || Math.random() <= chance;
+        if (staysCalm) {
             ci.cancel();
         }
     }
@@ -76,35 +94,24 @@ public class AbstractHorseEntityMixin {
     @ModifyArg(method = "setChildAttribute", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/AbstractHorseEntity;calculateAttributeBaseValue(DDDDLnet/minecraft/util/math/random/Random;)D"), index = 0)
     private double modifyFirstParentAttribute(double original, @Local(argsOnly = true) RegistryEntry<EntityAttribute> attribute) {
         PassiveEntity parent = (PassiveEntity) (Object) this;
-        return modifyAttribute(original, attribute.value(), parent.getStatusEffects());
+        return applyParentEffectBonus(original, attribute.value(), parent.getStatusEffects());
     }
 
     @ModifyArg(method = "setChildAttribute", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/AbstractHorseEntity;calculateAttributeBaseValue(DDDDLnet/minecraft/util/math/random/Random;)D"), index = 1)
     private double modifySecondParentAttribute(double original, @Local(argsOnly = true) RegistryEntry<EntityAttribute> attribute, @Local(argsOnly = true) PassiveEntity otherParent) {
-        return modifyAttribute(original, attribute.value(), otherParent.getStatusEffects());
+        return applyParentEffectBonus(original, attribute.value(), otherParent.getStatusEffects());
     }
 
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/AbstractHorseEntity;isAngry()Z"))
-    private void limitWalkingSpeedAndHorseLocator(CallbackInfo ci) {
+    private void onTick(CallbackInfo ci) {
         AbstractHorseEntity horse = (AbstractHorseEntity) (Object) this;
-        if (horse.hasControllingPassenger() && horse.isOnGround() && !horse.getControllingPassenger().isSprinting()) {
-            Vec3d velocity = horse.getVelocity();
-            double horizontalSpeed = velocity.horizontalLength();
-            if (horizontalSpeed > 0.01) {
-                double limitedSpeed = Math.min(0.1, horizontalSpeed);
-                horse.setVelocity(limitedSpeed * velocity.x / horizontalSpeed, velocity.y, limitedSpeed * velocity.z / horizontalSpeed);
-            }
-        }
-
+        limitWalkingSpeed(horse);
         horse.calculateDimensions();
-        if (horse.getCommandTags().contains("locate") && horse.age > 20 * 60 * 5) {
-            horse.getAttributes().getCustomInstance(EntityAttributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(0);
-            horse.removeCommandTag("locate");
-        }
+        tickLocatorSession(horse);
     }
 
     @Inject(method = "updatePassengerForDismount", at = @At("HEAD"))
-    private void addLocatorBarIcon(LivingEntity passenger, CallbackInfoReturnable<Vec3d> cir) {
+    private void startLocatorOnDismount(LivingEntity passenger, CallbackInfoReturnable<Vec3d> cir) {
         if (!(passenger instanceof ServerPlayerEntity)) {
             return;
         }
@@ -115,54 +122,89 @@ public class AbstractHorseEntityMixin {
         }
 
         horse.age = 0;
-        horse.addCommandTag("locate");
-        horse.getAttributes().getCustomInstance(EntityAttributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(100);
+        horse.addCommandTag(LOCATE_TAG);
+        setWaypointTransmitRange(horse, LOCATOR_TRANSMIT_RANGE);
+        applyHorseWaypointStyle(horse);
+    }
+
+    @Inject(method = "putPlayerOnBack", at = @At("HEAD"))
+    private void endLocatorOnRide(PlayerEntity player, CallbackInfo ci) {
+        endLocatorSession((AbstractHorseEntity) (Object) this);
+    }
+
+    @Unique
+    private static void limitWalkingSpeed(AbstractHorseEntity horse) {
+        if (!horse.hasControllingPassenger() || !horse.isOnGround() || horse.getControllingPassenger().isSprinting()) {
+            return;
+        }
+
+        Vec3d velocity = horse.getVelocity();
+        double horizontalSpeed = velocity.horizontalLength();
+        if (horizontalSpeed <= 0.01) {
+            return;
+        }
+
+        double cappedSpeed = Math.min(RIDDEN_WALK_SPEED_CAP, horizontalSpeed);
+        horse.setVelocity(cappedSpeed * velocity.x / horizontalSpeed, velocity.y, cappedSpeed * velocity.z / horizontalSpeed);
+    }
+
+    @Unique
+    private static void tickLocatorSession(AbstractHorseEntity horse) {
+        if (!horse.getCommandTags().contains(LOCATE_TAG)) {
+            return;
+        }
+
+        if (horse.age > LOCATOR_TIMEOUT_TICKS) {
+            endLocatorSession(horse);
+            return;
+        }
+
+        boolean hidden = horse.isLeashed() || horse.hasControllingPassenger();
+        setWaypointTransmitRange(horse, hidden ? 0 : LOCATOR_TRANSMIT_RANGE);
+    }
+
+    @Unique
+    private static void endLocatorSession(AbstractHorseEntity horse) {
+        setWaypointTransmitRange(horse, 0);
+        horse.removeCommandTag(LOCATE_TAG);
+    }
+
+    @Unique
+    private static void setWaypointTransmitRange(AbstractHorseEntity horse, double range) {
+        horse.getAttributes().getCustomInstance(EntityAttributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(range);
+    }
+
+    @Unique
+    private static void applyHorseWaypointStyle(AbstractHorseEntity horse) {
         String command = "/waypoint modify " + horse.getUuidAsString() + " style set horse";
         horse.getEntityWorld().getServer().getCommandManager().parseAndExecute(createCommandSource((ServerWorld) horse.getEntityWorld(), horse.getBlockPos()), command);
     }
 
-    @Inject(method = "putPlayerOnBack", at = @At("HEAD"))
-    private void removeLocatorBarIcon(PlayerEntity player, CallbackInfo ci) {
-        AbstractHorseEntity horse = (AbstractHorseEntity) (Object) this;
-        horse.getAttributes().getCustomInstance(EntityAttributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(0);
-        horse.removeCommandTag("locate");
-    }
-
     @Unique
-    private double modifyAttribute(double original, EntityAttribute attribute, Collection<StatusEffectInstance> effects) {
-        StatusEffectInstance chosenEffect = getStatusEffectInstance(effects);
-        if (chosenEffect == null) {
+    private static double applyParentEffectBonus(double original, EntityAttribute attribute, Collection<StatusEffectInstance> effects) {
+        StatusEffectInstance effect = strongestRelevantEffect(effects);
+        if (effect == null) {
             return original;
         }
 
-        String attributeModifier = EFFECT_MODIFIERS.get(chosenEffect.getEffectType());
-        if (!attribute.getTranslationKey().contains(attributeModifier)) {
+        String attributeName = EFFECT_ATTRIBUTES.get(effect.getEffectType());
+        if (!attribute.getTranslationKey().contains(attributeName)) {
             return original;
         }
 
-        double bonus = 0;
-        if (attribute.getTranslationKey().contains("max_health")) {
-            bonus = 2;
-        }
-        if (attribute.getTranslationKey().contains("jump_strength")) {
-            bonus = 0.08;
-        }
-        if (attribute.getTranslationKey().contains("movement_speed")) {
-            bonus = 0.03;
-        }
-        bonus *= chosenEffect.getAmplifier() + 1 + (chosenEffect.isAmbient() ? 0 : 1);
-        return original + bonus;
+        int potency = effect.getAmplifier() + 1 + (effect.isAmbient() ? 0 : 1);
+        return original + ATTRIBUTE_BONUSES.get(attributeName) * potency;
     }
 
     @Unique
     @Nullable
-    private static StatusEffectInstance getStatusEffectInstance(Collection<StatusEffectInstance> effects) {
+    private static StatusEffectInstance strongestRelevantEffect(Collection<StatusEffectInstance> effects) {
         StatusEffectInstance chosenEffect = null;
         int longestDuration = -1;
         int highestLevel = -1;
 
         for (StatusEffectInstance effect : effects) {
-            if (!EFFECT_MODIFIERS.containsKey(effect.getEffectType())) {
+            if (!EFFECT_ATTRIBUTES.containsKey(effect.getEffectType())) {
                 continue;
             }
 
