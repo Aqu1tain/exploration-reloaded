@@ -97,10 +97,18 @@ public class AbstractHorseEntityMixin {
         }
 
         horse.refreshDimensions();
-        if (horse.entityTags().contains("locate") && horse.tickCount > 20 * 60 * 5) {
+        if (!horse.entityTags().contains("locate")) {
+            return;
+        }
+
+        if (horse.tickCount > 20 * 60 * 5) {
             horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(0);
             horse.removeTag("locate");
+            return;
         }
+
+        boolean hidden = horse.isLeashed() || horse.hasControllingPassenger();
+        horse.getAttributes().getInstance(Attributes.WAYPOINT_TRANSMIT_RANGE).setBaseValue(hidden ? 0 : 100);
     }
 
     @Inject(method = "getDismountLocationForPassenger", at = @At("HEAD"))
