@@ -1,5 +1,7 @@
 package com.akitain.explorationreloaded.flight;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -33,6 +35,11 @@ public final class ElytraFlight {
     private static final int LAUNCH_GRACE_TICKS = 6;
     /** Guaranteed lift on release, so you leave the fire even when looking straight ahead. */
     private static final double LAUNCH_LIFT = 0.55;
+    /** Extra lift and burn per campfire touching the one you launch from, and for a signal fire. */
+    private static final double LIFT_PER_NEIGHBOUR = 0.12;
+    private static final double SIGNAL_FIRE_LIFT = 0.55;
+    private static final int BOOST_TICKS_PER_NEIGHBOUR = 6;
+    private static final int SIGNAL_FIRE_BOOST_TICKS = 25;
     /** A launch is a longer burn than a mid-air dash, because it has to get you off the ground. */
     private static final int LAUNCH_BOOST_TICKS = 50;
     private static final int BOOST_COOLDOWN_TICKS = 60;
@@ -122,15 +129,22 @@ public final class ElytraFlight {
             return;
         }
 
+        // A bigger hearth throws you further, the same way it lifts a glider further once airborne.
+        BlockState fire = player.getBlockStateOn();
+        boolean signal = fire.getValue(CampfireBlock.SIGNAL_FIRE);
+        int neighbours = signal ? 0 : adjacentCampfires(level, player.getOnPos());
+        double lift = LAUNCH_LIFT + (signal ? SIGNAL_FIRE_LIFT : LIFT_PER_NEIGHBOUR * neighbours);
+        int burn = LAUNCH_BOOST_TICKS + (signal ? SIGNAL_FIRE_BOOST_TICKS : BOOST_TICKS_PER_NEIGHBOUR * neighbours);
+
         FlightState.setCharged(player, false);
         FlightState.setCampfireChargeTime(player, 0);
-        FlightState.setBoostTicks(player, LAUNCH_BOOST_TICKS);
+        FlightState.setBoostTicks(player, burn);
         FlightState.setLaunchImmunity(player, LAUNCH_IMMUNITY_TICKS);
         FlightState.setLaunchGrace(player, LAUNCH_GRACE_TICKS);
 
         // Kick upward before opening the wings: fall flying cannot survive a tick spent on the ground.
         Vec3 velocity = player.getDeltaMovement();
-        push(player, new Vec3(velocity.x, Math.max(velocity.y, 0.0) + LAUNCH_LIFT, velocity.z));
+        push(player, new Vec3(velocity.x, Math.max(velocity.y, 0.0) + lift, velocity.z));
         player.startFallFlying();
 
         level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.8F, 0.8F);
@@ -221,6 +235,16 @@ public final class ElytraFlight {
             level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 2, 0.2, 0.2, 0.2, 0.1);
             level.sendParticles(ParticleTypes.LARGE_SMOKE, pos.x, pos.y, pos.z, 3, 0.2, 0.2, 0.2, 0.1);
         }
+    }
+
+    private static int adjacentCampfires(ServerLevel level, BlockPos pos) {
+        int neighbours = 0;
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            if (level.getBlockState(pos.relative(side)).is(FlightTags.CREATES_UPDRAFT)) {
+                neighbours++;
+            }
+        }
+        return neighbours;
     }
 
     private static void push(ServerPlayer player, Vec3 velocity) {

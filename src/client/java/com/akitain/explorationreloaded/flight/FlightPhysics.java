@@ -91,6 +91,7 @@ public final class FlightPhysics {
         double lift = Math.min(range / distance / 7.0, 1.0);
         Vec3 velocity = player.getDeltaMovement();
         player.setDeltaMovement(velocity.x, Math.min(velocity.y + lift, MAX_LIFT_SPEED), velocity.z);
+
     }
 
     /** Gives back part of the drag instead of adding thrust, so it lengthens a glide rather than speeding it. */
