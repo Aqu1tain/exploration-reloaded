@@ -9,7 +9,7 @@
     "contact": {
         "sources": "https://github.com/Aqu1tain/exploration-reloaded"
     },
-    "license": "CC-BY-NC-SA-4.0",
+    "license": "LGPL-3.0-only",
     "environment": "*",
     "entrypoints": {
         "main": ["com.akitain.explorationreloaded.ExplorationReloaded"],
