@@ -13,7 +13,11 @@
     "item.exploration-reloaded.nautilus_armor": "Nautilus Armor",
     "enchantment.exploration-reloaded.smokestack": "Smokestack",
     "enchantment.exploration-reloaded.cloudskipper": "Cloudskipper",
-    "gamerule.fireworkBoostsFlight": "Fireworks boost elytra flight",
-    "gamerule.campfireUpdrafts": "Campfires create updrafts",
-    "gamerule.smokestackChargeTicks": "Ticks per Smokestack charge"
+    "enchantment.exploration-reloaded.smokestack.desc": "Crouch on a lit campfire to store its smoke, then spend a charge mid-flight for a burst of speed.",
+    "enchantment.exploration-reloaded.cloudskipper.desc": "Air resistance fades the higher you fly, letting you glide far further above the clouds.",
+    "key.exploration-reloaded.smokestack_boost": "Smokestack boost",
+    "key.exploration-reloaded.fold_wings": "Fold wings",
+    "gamerule.exploration-reloaded:firework_boosts_flight": "Fireworks boost elytra flight",
+    "gamerule.exploration-reloaded:campfire_updrafts": "Campfires create updrafts",
+    "gamerule.exploration-reloaded:smokestack_charge_ticks": "Ticks per Smokestack charge"
 }

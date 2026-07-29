@@ -25,11 +25,31 @@ public final class FlightNetworking {
         }
     }
 
+    /** Folding the wings mid-flight lets you drop where you want instead of waiting for a wall. */
+    public record FoldWingsPayload() implements CustomPacketPayload {
+        public static final CustomPacketPayload.Type<FoldWingsPayload> ID =
+                new CustomPacketPayload.Type<>(ExplorationReloaded.id("fold_wings"));
+        public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, FoldWingsPayload> CODEC =
+                StreamCodec.unit(new FoldWingsPayload());
+
+        @Override
+        public CustomPacketPayload.Type<FoldWingsPayload> type() {
+            return ID;
+        }
+    }
+
     private FlightNetworking() {
     }
 
     public static void register() {
         PayloadTypeRegistry.serverboundPlay().register(SpendChargePayload.ID, SpendChargePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(FoldWingsPayload.ID, FoldWingsPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(FoldWingsPayload.ID, (payload, context) -> {
+            var player = context.player();
+            if (player.isFallFlying()) {
+                player.stopFallFlying();
+            }
+        });
         ServerPlayNetworking.registerGlobalReceiver(SpendChargePayload.ID, (payload, context) -> {
             var player = context.player();
             if (player.level() instanceof ServerLevel level) {

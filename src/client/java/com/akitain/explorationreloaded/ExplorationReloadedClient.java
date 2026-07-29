@@ -1,6 +1,5 @@
 package com.akitain.explorationreloaded;
 
-import com.akitain.explorationreloaded.flight.CameraRoll;
 import com.akitain.explorationreloaded.flight.FlightClient;
 import com.akitain.explorationreloaded.map_book.MapBookFilledProperty;
 import net.fabricmc.api.ClientModInitializer;
@@ -11,7 +10,6 @@ public class ExplorationReloadedClient implements ClientModInitializer {
     public void onInitializeClient() {
         ClientMapBookNetworking.register();
         FlightClient.register();
-        CameraRoll.register();
         ConditionalItemModelProperties.ID_MAPPER.put(ExplorationReloaded.id("map_book/filled"), MapBookFilledProperty.CODEC);
     }
 }
