@@ -33,6 +33,13 @@ public final class ElytraFlight {
     private static final int RANGE_PER_NEIGHBOUR = 3;
     /** Ticks of campfire immunity granted by a launch, so leaving the fire never singes you. */
     private static final int LAUNCH_IMMUNITY_TICKS = 20;
+    /**
+     * A launch fires while the player is still standing on the fire, and vanilla cancels fall flying for
+     * anyone touching the ground. So the wings are re-opened every tick until the thrust has cleared it.
+     */
+    private static final int LAUNCH_GRACE_TICKS = 6;
+    /** Guaranteed lift on release, so you leave the fire even when looking straight ahead. */
+    private static final double LAUNCH_LIFT = 0.55;
     private static final int BOOST_DURATION_TICKS = 40;
     /** A launch is a longer burn than a mid-air dash, because it has to get you off the ground. */
     private static final int LAUNCH_BOOST_TICKS = 50;
@@ -70,6 +77,10 @@ public final class ElytraFlight {
         int immunity = FlightState.launchImmunity(player);
         if (immunity > 0) {
             FlightState.setLaunchImmunity(player, immunity - 1);
+        }
+        int grace = FlightState.launchGrace(player);
+        if (grace > 0) {
+            FlightState.setLaunchGrace(player, grace - 1);
         }
     }
 
@@ -162,6 +173,11 @@ public final class ElytraFlight {
         FlightState.setCampfireChargeTime(player, 0);
         FlightState.setBoostTicks(player, LAUNCH_BOOST_TICKS);
         FlightState.setLaunchImmunity(player, LAUNCH_IMMUNITY_TICKS);
+        FlightState.setLaunchGrace(player, LAUNCH_GRACE_TICKS);
+
+        // Kick upward before opening the wings: fall flying cannot survive a tick spent on the ground.
+        Vec3 velocity = player.getDeltaMovement();
+        push(player, new Vec3(velocity.x, Math.max(velocity.y, 0.0) + LAUNCH_LIFT, velocity.z));
         player.startFallFlying();
 
         level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.8F, 0.8F);
@@ -235,7 +251,14 @@ public final class ElytraFlight {
         if (remaining <= 0) {
             return;
         }
-        if (!player.isFallFlying()) {
+
+        // During the grace window the wings keep being re-opened; after it, losing them ends the burn.
+        boolean launching = FlightState.launchGrace(player) > 0;
+        if (launching) {
+            if (!player.isFallFlying()) {
+                player.startFallFlying();
+            }
+        } else if (!player.isFallFlying()) {
             FlightState.setBoostTicks(player, 0);
             return;
         }

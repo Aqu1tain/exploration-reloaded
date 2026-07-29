@@ -41,6 +41,10 @@ public final class FlightState {
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("launch_immunity"));
 
+    public static final AttachmentType<Integer> LAUNCH_GRACE = AttachmentRegistry.<Integer>builder()
+            .initializer(() -> 0)
+            .buildAndRegister(ExplorationReloaded.id("launch_grace"));
+
     public static final AttachmentType<Integer> BOOST_TICKS = AttachmentRegistry.<Integer>builder()
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("boost_ticks"));
@@ -97,6 +101,14 @@ public final class FlightState {
 
     public static void setLaunchImmunity(Player player, int ticks) {
         player.setAttached(LAUNCH_IMMUNITY, Math.max(0, ticks));
+    }
+
+    public static int launchGrace(Player player) {
+        return player.getAttachedOrElse(LAUNCH_GRACE, 0);
+    }
+
+    public static void setLaunchGrace(Player player, int ticks) {
+        player.setAttached(LAUNCH_GRACE, Math.max(0, ticks));
     }
 
     public static int boostTicks(Player player) {
