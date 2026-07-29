@@ -19,6 +19,6 @@ public class CameraRollMixin {
             at = @At(value = "INVOKE", target = "Lorg/joml/Quaternionf;rotationYXZ(FFF)Lorg/joml/Quaternionf;"),
             index = 2)
     private float erBankIntoTurns(float roll) {
-        return roll + CameraRoll.rollDegrees(1.0F) * ((float) Math.PI / 180.0F);
+        return roll + CameraRoll.rollRadians();
     }
 }
