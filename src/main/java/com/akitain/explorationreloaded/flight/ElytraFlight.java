@@ -38,12 +38,21 @@ public final class ElytraFlight {
         tickUpdrafts(level, player);
     }
 
-    /** Standing on a lit campfire slowly fills the Smokestack charges the enchantment allows. */
-    private static void tickCampfireCharging(ServerLevel level, ServerPlayer player) {
-        if (maxCharges(player) <= 0) {
-            return;
+    /**
+     * Crouching on a lit campfire slowly fills the Smokestack charges the enchantment allows. Crouching
+     * is what marks the player as riding the smoke rather than blundering into the fire, and it is what
+     * {@link com.akitain.explorationreloaded.mixin.CampfireChargingMixin} keys the burn exemption off.
+     */
+    public static boolean isChargingFromCampfire(Player player) {
+        if (!player.isShiftKeyDown() || smokestackLevel(player) <= 0) {
+            return false;
         }
-        if (!player.getBlockStateOn().is(BlockTags.CAMPFIRES)) {
+        BlockState below = player.getBlockStateOn();
+        return below.is(BlockTags.CAMPFIRES) && below.getValue(CampfireBlock.LIT);
+    }
+
+    private static void tickCampfireCharging(ServerLevel level, ServerPlayer player) {
+        if (!isChargingFromCampfire(player)) {
             FlightState.setCampfireChargeTime(player, 0);
             return;
         }
@@ -145,7 +154,11 @@ public final class ElytraFlight {
         player.connection.send(new ClientboundSetEntityMotionPacket(player));
     }
 
-    private static int maxCharges(ServerPlayer player) {
+    private static int smokestackLevel(Player player) {
         return FlightEnchantments.smokestackLevel(player);
+    }
+
+    private static int maxCharges(ServerPlayer player) {
+        return smokestackLevel(player);
     }
 }
