@@ -26,20 +26,27 @@ import net.minecraft.world.phys.Vec3;
 public final class ElytraFlight {
 
     /** How far below the player an updraft is looked for. */
-    private static final int MAX_UPDRAFT_DEPTH = 32;
+    private static final int MAX_UPDRAFT_DEPTH = 38;
     private static final int SIGNAL_FIRE_RANGE = 24;
     private static final int CAMPFIRE_RANGE = 10;
+    /** Each campfire touching the one below you widens its column. Build a hearth, fly higher. */
+    private static final int RANGE_PER_NEIGHBOUR = 3;
+    /** Ticks of campfire immunity granted by a launch, so leaving the fire never singes you. */
+    private static final int LAUNCH_IMMUNITY_TICKS = 20;
     private static final int BOOST_DURATION_TICKS = 40;
     /** A launch is a longer burn than a mid-air dash, because it has to get you off the ground. */
     private static final int LAUNCH_BOOST_TICKS = 50;
     private static final int BOOST_COOLDOWN_TICKS = 60;
     /** Ticks a player must already have been gliding before a charge may be spent. */
     private static final int BOOST_STARTUP_TICKS = 10;
-    private static final int SMOKE_TRAIL_TICKS = 60;
+    private static final int SMOKE_TRAIL_TICKS = 100;
     private static final double CLOUD_LAYER = 100.0;
     private static final double CLOUDSKIPPER_CEILING = 230.0;
-    /** Fraction of horizontal speed handed back per tick at full altitude and full enchantment level. */
-    private static final double MAX_DRAG_RECOVERY = 0.02;
+    /** Horizontal drag vanilla applies each tick of a glide; Cloudskipper gives part of it back. */
+    private static final double GLIDE_DRAG = 0.99;
+    private static final double MAX_DRAG_RECOVERY = 0.6;
+    /** Instant kick a spent charge gives, in blocks per tick along the look vector. */
+    private static final double DASH_IMPULSE = 1.5;
 
     private ElytraFlight() {
     }
@@ -59,6 +66,10 @@ public final class ElytraFlight {
         int cooldown = FlightState.boostCooldown(player);
         if (cooldown > 0) {
             FlightState.setBoostCooldown(player, cooldown - 1);
+        }
+        int immunity = FlightState.launchImmunity(player);
+        if (immunity > 0) {
+            FlightState.setLaunchImmunity(player, immunity - 1);
         }
     }
 
@@ -87,10 +98,12 @@ public final class ElytraFlight {
         if (y < CLOUD_LAYER) {
             return;
         }
-        double altitude = Math.min((y - CLOUD_LAYER) / (CLOUDSKIPPER_CEILING - CLOUD_LAYER), 1.0);
-        double recovered = altitude * MAX_DRAG_RECOVERY * (enchantLevel / 3.0);
+        // Quadratic in altitude, as upstream: barely felt just above the clouds, full effect near the ceiling.
+        double altitude = y >= CLOUDSKIPPER_CEILING ? 1.0 : 0.00006 * Math.pow(y - CLOUD_LAYER, 2);
+        double factor = Math.min(altitude, 1.0) * MAX_DRAG_RECOVERY * (enchantLevel / 3.0);
 
-        // Give back a slice of the horizontal speed the drag just took, rather than adding raw thrust.
+        // Undo part of the drag rather than adding thrust, so it lengthens a glide instead of speeding it.
+        double recovered = factor * (1.0 / GLIDE_DRAG - 1.0);
         Vec3 velocity = player.getDeltaMovement();
         push(player, velocity.add(velocity.x * recovered, 0.0, velocity.z * recovered));
 
@@ -148,6 +161,7 @@ public final class ElytraFlight {
         FlightState.setCharged(player, false);
         FlightState.setCampfireChargeTime(player, 0);
         FlightState.setBoostTicks(player, LAUNCH_BOOST_TICKS);
+        FlightState.setLaunchImmunity(player, LAUNCH_IMMUNITY_TICKS);
         player.startFallFlying();
 
         level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.8F, 0.8F);
@@ -208,8 +222,11 @@ public final class ElytraFlight {
             FlightState.setCharges(player, FlightState.charges(player) - 1);
         }
         FlightState.setBoostCooldown(player, BOOST_COOLDOWN_TICKS);
-        FlightState.setBoostTicks(player, BOOST_DURATION_TICKS);
-        level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0F, 1.0F);
+
+        // A mid-air dash is an instant kick, unlike the launch's long burn. Eleron made both sustained;
+        // Aileron's snappier split is the one that reads as a dash.
+        push(player, player.getDeltaMovement().add(player.getLookAngle().scale(DASH_IMPULSE)));
+        level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.8F, 0.4F);
         return true;
     }
 
@@ -258,7 +275,9 @@ public final class ElytraFlight {
             return;
         }
 
-        int range = state.getValue(CampfireBlock.SIGNAL_FIRE) ? SIGNAL_FIRE_RANGE : CAMPFIRE_RANGE;
+        int range = state.getValue(CampfireBlock.SIGNAL_FIRE)
+                ? SIGNAL_FIRE_RANGE
+                : CAMPFIRE_RANGE + RANGE_PER_NEIGHBOUR * adjacentCampfires(level, pos);
         double distance = Math.abs(pos.getY() - player.getY());
         if (distance <= 0 || distance > range) {
             return;
@@ -267,6 +286,16 @@ public final class ElytraFlight {
         double lift = Math.min(range / distance / 7.0, 1.0);
         Vec3 velocity = player.getDeltaMovement();
         push(player, new Vec3(velocity.x, Math.min(velocity.y + lift, 1.0), velocity.z));
+    }
+
+    private static int adjacentCampfires(ServerLevel level, BlockPos pos) {
+        int neighbours = 0;
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            if (level.getBlockState(pos.relative(side)).is(FlightTags.CREATES_UPDRAFT)) {
+                neighbours++;
+            }
+        }
+        return neighbours;
     }
 
     private static void push(ServerPlayer player, Vec3 velocity) {

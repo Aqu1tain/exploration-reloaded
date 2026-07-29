@@ -37,6 +37,10 @@ public final class FlightState {
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("boost_cooldown"));
 
+    public static final AttachmentType<Integer> LAUNCH_IMMUNITY = AttachmentRegistry.<Integer>builder()
+            .initializer(() -> 0)
+            .buildAndRegister(ExplorationReloaded.id("launch_immunity"));
+
     public static final AttachmentType<Integer> BOOST_TICKS = AttachmentRegistry.<Integer>builder()
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("boost_ticks"));
@@ -85,6 +89,14 @@ public final class FlightState {
 
     public static void setBoostCooldown(Player player, int ticks) {
         player.setAttached(BOOST_COOLDOWN, Math.max(0, ticks));
+    }
+
+    public static int launchImmunity(Player player) {
+        return player.getAttachedOrElse(LAUNCH_IMMUNITY, 0);
+    }
+
+    public static void setLaunchImmunity(Player player, int ticks) {
+        player.setAttached(LAUNCH_IMMUNITY, Math.max(0, ticks));
     }
 
     public static int boostTicks(Player player) {

@@ -18,7 +18,7 @@ public final class CampfireSafety {
             if (!source.is(DamageTypes.CAMPFIRE) || !(entity instanceof Player player)) {
                 return true;
             }
-            return !ElytraFlight.isRidingCampfireSmoke(player);
+            return !ElytraFlight.isRidingCampfireSmoke(player) && FlightState.launchImmunity(player) <= 0;
         });
     }
 }
