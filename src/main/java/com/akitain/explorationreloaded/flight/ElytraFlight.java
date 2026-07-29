@@ -27,7 +27,10 @@ public final class ElytraFlight {
     private static final int MAX_UPDRAFT_DEPTH = 32;
     private static final int SIGNAL_FIRE_RANGE = 24;
     private static final int CAMPFIRE_RANGE = 10;
-    private static final int BOOST_DURATION_TICKS = 10;
+    private static final int BOOST_DURATION_TICKS = 40;
+    private static final int BOOST_COOLDOWN_TICKS = 60;
+    /** Ticks a player must already have been gliding before a charge may be spent. */
+    private static final int BOOST_STARTUP_TICKS = 10;
     private static final double LAUNCH_SPEED = 0.9;
     private static final double SIGNAL_LAUNCH_SPEED = 1.4;
     private static final int SMOKE_TRAIL_TICKS = 60;
@@ -40,12 +43,28 @@ public final class ElytraFlight {
     }
 
     public static void tick(ServerLevel level, ServerPlayer player) {
+        tickCooldown(player);
+        tickChargeDecay(player);
         tickCampfireLaunch(level, player);
         tickCampfireCharging(level, player);
         tickBoost(level, player);
         tickUpdrafts(level, player);
         tickCloudskipper(level, player);
         tickSmokeTrail(level, player);
+    }
+
+    private static void tickCooldown(ServerPlayer player) {
+        int cooldown = FlightState.boostCooldown(player);
+        if (cooldown > 0) {
+            FlightState.setBoostCooldown(player, cooldown - 1);
+        }
+    }
+
+    /** Charges are carried into flight, not hoarded: landing empties the tank. */
+    private static void tickChargeDecay(ServerPlayer player) {
+        if (player.onGround() && !player.isFallFlying() && !isRidingCampfireSmoke(player)) {
+            FlightState.setCharges(player, 0);
+        }
     }
 
     /**
@@ -121,6 +140,11 @@ public final class ElytraFlight {
         if (!player.onGround() || player.isFallFlying() || !isRidingCampfireSmoke(player)) {
             return;
         }
+        // Charging and launching both key off crouching, so they must not race: while there are charges
+        // left to store the smoke only fuels you, and it throws you up once the tank is full.
+        if (FlightState.charges(player) < maxCharges(player)) {
+            return;
+        }
 
         boolean signal = player.getBlockStateOn().getValue(CampfireBlock.SIGNAL_FIRE);
         Vec3 velocity = player.getDeltaMovement();
@@ -167,7 +191,13 @@ public final class ElytraFlight {
         if (!player.isFallFlying() || FlightState.charges(player) <= 0) {
             return false;
         }
-        FlightState.setCharges(player, FlightState.charges(player) - 1);
+        if (FlightState.boostCooldown(player) > 0 || player.getFallFlyingTicks() <= BOOST_STARTUP_TICKS) {
+            return false;
+        }
+        if (!player.isCreative()) {
+            FlightState.setCharges(player, FlightState.charges(player) - 1);
+        }
+        FlightState.setBoostCooldown(player, BOOST_COOLDOWN_TICKS);
         FlightState.setBoostTicks(player, BOOST_DURATION_TICKS);
         level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0F, 1.0F);
         return true;
@@ -214,7 +244,7 @@ public final class ElytraFlight {
         }
 
         BlockState state = level.getBlockState(pos);
-        if (!state.is(BlockTags.CAMPFIRES) || !state.getValue(CampfireBlock.LIT)) {
+        if (!state.is(FlightTags.CREATES_UPDRAFT) || !state.getValue(CampfireBlock.LIT)) {
             return;
         }
 
