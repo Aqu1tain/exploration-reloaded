@@ -35,8 +35,6 @@ public final class ElytraFlight {
     private static final int BOOST_COOLDOWN_TICKS = 60;
     /** Ticks a player must already have been gliding before a charge may be spent. */
     private static final int BOOST_STARTUP_TICKS = 10;
-    private static final double LAUNCH_SPEED = 0.9;
-    private static final double SIGNAL_LAUNCH_SPEED = 1.4;
     private static final int SMOKE_TRAIL_TICKS = 60;
     private static final double CLOUD_LAYER = 100.0;
     private static final double CLOUDSKIPPER_CEILING = 230.0;
