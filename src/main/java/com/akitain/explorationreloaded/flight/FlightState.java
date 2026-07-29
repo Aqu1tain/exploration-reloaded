@@ -46,8 +46,15 @@ public final class FlightState {
             .buildAndRegister(ExplorationReloaded.id("launch_grace"));
 
     public static final AttachmentType<Integer> BOOST_TICKS = AttachmentRegistry.<Integer>builder()
+            .syncWith(ByteBufCodecs.VAR_INT.cast(), AttachmentSyncPredicate.targetOnly())
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("boost_ticks"));
+
+    /** Mirrors the game rule so the client, which owns glide physics, knows whether to lift. */
+    public static final AttachmentType<Boolean> UPDRAFTS_ENABLED = AttachmentRegistry.<Boolean>builder()
+            .syncWith(ByteBufCodecs.BOOL.cast(), AttachmentSyncPredicate.targetOnly())
+            .initializer(() -> true)
+            .buildAndRegister(ExplorationReloaded.id("updrafts_enabled"));
 
     private FlightState() {
     }
@@ -109,6 +116,16 @@ public final class FlightState {
 
     public static void setLaunchGrace(Player player, int ticks) {
         player.setAttached(LAUNCH_GRACE, Math.max(0, ticks));
+    }
+
+    public static boolean updraftsEnabled(Player player) {
+        return player.getAttachedOrElse(UPDRAFTS_ENABLED, true);
+    }
+
+    public static void setUpdraftsEnabled(Player player, boolean enabled) {
+        if (updraftsEnabled(player) != enabled) {
+            player.setAttached(UPDRAFTS_ENABLED, enabled);
+        }
     }
 
     public static int boostTicks(Player player) {
