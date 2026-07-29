@@ -35,11 +35,9 @@ public final class ElytraFlight {
     private static final int LAUNCH_GRACE_TICKS = 6;
     /** Guaranteed lift on release, so you leave the fire even when looking straight ahead. */
     private static final double LAUNCH_LIFT = 0.55;
-    /** Extra lift and burn per campfire touching the one you launch from, and for a signal fire. */
+    /** Extra lift and burn per neighbour-equivalent of hearth under the launch pad. */
     private static final double LIFT_PER_NEIGHBOUR = 0.12;
-    private static final double SIGNAL_FIRE_LIFT = 0.55;
     private static final int BOOST_TICKS_PER_NEIGHBOUR = 6;
-    private static final int SIGNAL_FIRE_BOOST_TICKS = 25;
     /** A launch is a longer burn than a mid-air dash, because it has to get you off the ground. */
     private static final int LAUNCH_BOOST_TICKS = 50;
     private static final int BOOST_COOLDOWN_TICKS = 60;
@@ -129,12 +127,11 @@ public final class ElytraFlight {
             return;
         }
 
-        // A bigger hearth throws you further, the same way it lifts a glider further once airborne.
-        BlockState fire = player.getBlockStateOn();
-        boolean signal = fire.getValue(CampfireBlock.SIGNAL_FIRE);
-        int neighbours = signal ? 0 : adjacentCampfires(level, player.getOnPos());
-        double lift = LAUNCH_LIFT + (signal ? SIGNAL_FIRE_LIFT : LIFT_PER_NEIGHBOUR * neighbours);
-        int burn = LAUNCH_BOOST_TICKS + (signal ? SIGNAL_FIRE_BOOST_TICKS : BOOST_TICKS_PER_NEIGHBOUR * neighbours);
+        // Measured while charging, not now: by the time you stand up you may already be off the fire,
+        // and reading signal_fire off a grass block throws.
+        int power = FlightState.hearthPower(player);
+        double lift = LAUNCH_LIFT + LIFT_PER_NEIGHBOUR * power;
+        int burn = LAUNCH_BOOST_TICKS + BOOST_TICKS_PER_NEIGHBOUR * power;
 
         FlightState.setCharged(player, false);
         FlightState.setCampfireChargeTime(player, 0);
@@ -157,6 +154,8 @@ public final class ElytraFlight {
             FlightState.setCampfireChargeTime(player, 0);
             return;
         }
+
+        FlightState.setHearthPower(player, hearthPower(level, player));
 
         int elapsed = FlightState.campfireChargeTime(player) + 1;
         FlightState.setCampfireChargeTime(player, elapsed);
@@ -235,6 +234,21 @@ public final class ElytraFlight {
             level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 2, 0.2, 0.2, 0.2, 0.1);
             level.sendParticles(ParticleTypes.LARGE_SMOKE, pos.x, pos.y, pos.z, 3, 0.2, 0.2, 0.2, 0.1);
         }
+    }
+
+    /**
+     * How much of a hearth the player is standing on, in neighbour-equivalents. A signal fire counts as
+     * a full ring of four, which is what makes a hay bale the cheapest good launch pad.
+     */
+    private static int hearthPower(ServerLevel level, ServerPlayer player) {
+        BlockState fire = player.getBlockStateOn();
+        if (!fire.is(FlightTags.CREATES_UPDRAFT) || !fire.hasProperty(CampfireBlock.SIGNAL_FIRE)) {
+            return 0;
+        }
+        if (fire.getValue(CampfireBlock.SIGNAL_FIRE)) {
+            return 4;
+        }
+        return adjacentCampfires(level, player.getOnPos());
     }
 
     private static int adjacentCampfires(ServerLevel level, BlockPos pos) {

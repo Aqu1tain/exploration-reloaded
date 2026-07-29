@@ -41,6 +41,11 @@ public final class FlightState {
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("launch_immunity"));
 
+    /** Neighbour-equivalents of the fire being charged on, sampled while crouching. */
+    public static final AttachmentType<Integer> HEARTH_POWER = AttachmentRegistry.<Integer>builder()
+            .initializer(() -> 0)
+            .buildAndRegister(ExplorationReloaded.id("hearth_power"));
+
     public static final AttachmentType<Integer> LAUNCH_GRACE = AttachmentRegistry.<Integer>builder()
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("launch_grace"));
@@ -108,6 +113,14 @@ public final class FlightState {
 
     public static void setLaunchImmunity(Player player, int ticks) {
         player.setAttached(LAUNCH_IMMUNITY, Math.max(0, ticks));
+    }
+
+    public static int hearthPower(Player player) {
+        return player.getAttachedOrElse(HEARTH_POWER, 0);
+    }
+
+    public static void setHearthPower(Player player, int power) {
+        player.setAttached(HEARTH_POWER, Math.max(0, power));
     }
 
     public static int launchGrace(Player player) {
