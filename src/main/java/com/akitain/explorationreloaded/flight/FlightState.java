@@ -28,6 +28,11 @@ public final class FlightState {
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("smoke_trail_ticks"));
 
+    /** Set once the smoke column is ready to throw the player; consumed when they stand up. */
+    public static final AttachmentType<Boolean> CHARGED = AttachmentRegistry.<Boolean>builder()
+            .initializer(() -> false)
+            .buildAndRegister(ExplorationReloaded.id("charged"));
+
     public static final AttachmentType<Integer> BOOST_COOLDOWN = AttachmentRegistry.<Integer>builder()
             .initializer(() -> 0)
             .buildAndRegister(ExplorationReloaded.id("boost_cooldown"));
@@ -64,6 +69,14 @@ public final class FlightState {
 
     public static void setSmokeTrailTicks(Player player, int ticks) {
         player.setAttached(SMOKE_TRAIL_TICKS, Math.max(0, ticks));
+    }
+
+    public static boolean isCharged(Player player) {
+        return player.getAttachedOrElse(CHARGED, false);
+    }
+
+    public static void setCharged(Player player, boolean charged) {
+        player.setAttached(CHARGED, charged);
     }
 
     public static int boostCooldown(Player player) {

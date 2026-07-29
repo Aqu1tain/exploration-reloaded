@@ -9,6 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,6 +30,8 @@ public final class ElytraFlight {
     private static final int SIGNAL_FIRE_RANGE = 24;
     private static final int CAMPFIRE_RANGE = 10;
     private static final int BOOST_DURATION_TICKS = 40;
+    /** A launch is a longer burn than a mid-air dash, because it has to get you off the ground. */
+    private static final int LAUNCH_BOOST_TICKS = 50;
     private static final int BOOST_COOLDOWN_TICKS = 60;
     /** Ticks a player must already have been gliding before a charge may be spent. */
     private static final int BOOST_STARTUP_TICKS = 10;
@@ -60,9 +64,10 @@ public final class ElytraFlight {
         }
     }
 
-    /** Charges are carried into flight, not hoarded: landing empties the tank. */
+    /** Charges are carried into flight, not hoarded: landing with nothing armed empties the tank. */
     private static void tickChargeDecay(ServerPlayer player) {
-        if (player.onGround() && !player.isFallFlying() && !isRidingCampfireSmoke(player)) {
+        if (player.onGround() && !player.isFallFlying() && !FlightState.isCharged(player)
+                && !isRidingCampfireSmoke(player)) {
             FlightState.setCharges(player, 0);
         }
     }
@@ -125,7 +130,7 @@ public final class ElytraFlight {
      * It is what earns the burn exemption, the launch, and the Smokestack charges.
      */
     public static boolean isRidingCampfireSmoke(Player player) {
-        if (!player.isShiftKeyDown()) {
+        if (!player.isShiftKeyDown() || !player.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA)) {
             return false;
         }
         BlockState below = player.getBlockStateOn();
@@ -133,30 +138,27 @@ public final class ElytraFlight {
     }
 
     /**
-     * The smoke column throws a crouching player upward. This is how you get airborne now that rockets
-     * are inert, so it deliberately needs no enchantment: only a campfire.
+     * Releasing the crouch is what launches you: the smoke column has been charging under you, and
+     * standing up lets it go. The launch is the same directional thrust a spent charge gives, so you
+     * aim where you want to go before standing up.
      */
     private static void tickCampfireLaunch(ServerLevel level, ServerPlayer player) {
-        if (!player.onGround() || player.isFallFlying() || !isRidingCampfireSmoke(player)) {
-            return;
-        }
-        // Charging and launching both key off crouching, so they must not race: while there are charges
-        // left to store the smoke only fuels you, and it throws you up once the tank is full.
-        if (FlightState.charges(player) < maxCharges(player)) {
+        if (player.isShiftKeyDown() || !FlightState.isCharged(player)) {
             return;
         }
 
-        boolean signal = player.getBlockStateOn().getValue(CampfireBlock.SIGNAL_FIRE);
-        Vec3 velocity = player.getDeltaMovement();
-        push(player, new Vec3(velocity.x, signal ? SIGNAL_LAUNCH_SPEED : LAUNCH_SPEED, velocity.z));
+        FlightState.setCharged(player, false);
+        FlightState.setCampfireChargeTime(player, 0);
+        FlightState.setBoostTicks(player, LAUNCH_BOOST_TICKS);
+        player.startFallFlying();
 
-        level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.7F, 1.4F);
+        level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.8F, 0.8F);
         Vec3 pos = player.position();
         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y, pos.z, 30, 0.3, 0.2, 0.3, 0.05);
     }
 
     private static void tickCampfireCharging(ServerLevel level, ServerPlayer player) {
-        if (smokestackLevel(player) <= 0 || !isRidingCampfireSmoke(player)) {
+        if (!isRidingCampfireSmoke(player)) {
             FlightState.setCampfireChargeTime(player, 0);
             return;
         }
@@ -168,7 +170,17 @@ public final class ElytraFlight {
         if (elapsed % interval != 0) {
             return;
         }
-        grantCharge(level, player);
+
+        // The first interval always arms the launch, even with no Smokestack: taking off must not
+        // depend on a treasure enchantment. Further intervals bank charges up to the enchantment level.
+        boolean bankable = FlightState.charges(player) < maxCharges(player);
+        if (!bankable && FlightState.isCharged(player)) {
+            return;
+        }
+        FlightState.setCharged(player, true);
+        if (bankable) {
+            grantCharge(level, player);
+        }
     }
 
     public static void grantCharge(ServerLevel level, ServerPlayer player) {
