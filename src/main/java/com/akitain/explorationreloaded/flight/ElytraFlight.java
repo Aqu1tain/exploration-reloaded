@@ -28,31 +28,51 @@ public final class ElytraFlight {
     private static final int SIGNAL_FIRE_RANGE = 24;
     private static final int CAMPFIRE_RANGE = 10;
     private static final int BOOST_DURATION_TICKS = 10;
+    private static final double LAUNCH_SPEED = 0.9;
+    private static final double SIGNAL_LAUNCH_SPEED = 1.4;
 
     private ElytraFlight() {
     }
 
     public static void tick(ServerLevel level, ServerPlayer player) {
+        tickCampfireLaunch(level, player);
         tickCampfireCharging(level, player);
         tickBoost(level, player);
         tickUpdrafts(level, player);
     }
 
     /**
-     * Crouching on a lit campfire slowly fills the Smokestack charges the enchantment allows. Crouching
-     * is what marks the player as riding the smoke rather than blundering into the fire, and it is what
-     * {@link com.akitain.explorationreloaded.mixin.CampfireChargingMixin} keys the burn exemption off.
+     * Crouching on a lit campfire means riding its smoke column rather than blundering into the fire.
+     * It is what earns the burn exemption, the launch, and the Smokestack charges.
      */
-    public static boolean isChargingFromCampfire(Player player) {
-        if (!player.isShiftKeyDown() || smokestackLevel(player) <= 0) {
+    public static boolean isRidingCampfireSmoke(Player player) {
+        if (!player.isShiftKeyDown()) {
             return false;
         }
         BlockState below = player.getBlockStateOn();
         return below.is(BlockTags.CAMPFIRES) && below.getValue(CampfireBlock.LIT);
     }
 
+    /**
+     * The smoke column throws a crouching player upward. This is how you get airborne now that rockets
+     * are inert, so it deliberately needs no enchantment: only a campfire.
+     */
+    private static void tickCampfireLaunch(ServerLevel level, ServerPlayer player) {
+        if (!player.onGround() || player.isFallFlying() || !isRidingCampfireSmoke(player)) {
+            return;
+        }
+
+        boolean signal = player.getBlockStateOn().getValue(CampfireBlock.SIGNAL_FIRE);
+        Vec3 velocity = player.getDeltaMovement();
+        push(player, new Vec3(velocity.x, signal ? SIGNAL_LAUNCH_SPEED : LAUNCH_SPEED, velocity.z));
+
+        level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.7F, 1.4F);
+        Vec3 pos = player.position();
+        level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y, pos.z, 30, 0.3, 0.2, 0.3, 0.05);
+    }
+
     private static void tickCampfireCharging(ServerLevel level, ServerPlayer player) {
-        if (!isChargingFromCampfire(player)) {
+        if (smokestackLevel(player) <= 0 || !isRidingCampfireSmoke(player)) {
             FlightState.setCampfireChargeTime(player, 0);
             return;
         }
