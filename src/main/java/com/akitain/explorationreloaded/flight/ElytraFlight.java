@@ -30,6 +30,11 @@ public final class ElytraFlight {
     private static final int BOOST_DURATION_TICKS = 10;
     private static final double LAUNCH_SPEED = 0.9;
     private static final double SIGNAL_LAUNCH_SPEED = 1.4;
+    private static final int SMOKE_TRAIL_TICKS = 60;
+    private static final double CLOUD_LAYER = 100.0;
+    private static final double CLOUDSKIPPER_CEILING = 230.0;
+    /** Fraction of horizontal speed handed back per tick at full altitude and full enchantment level. */
+    private static final double MAX_DRAG_RECOVERY = 0.02;
 
     private ElytraFlight() {
     }
@@ -39,6 +44,61 @@ public final class ElytraFlight {
         tickCampfireCharging(level, player);
         tickBoost(level, player);
         tickUpdrafts(level, player);
+        tickCloudskipper(level, player);
+        tickSmokeTrail(level, player);
+    }
+
+    /**
+     * Cloudskipper trades thrust for reach: the higher you fly, the less the air holds you back. Nothing
+     * happens below the cloud layer, and the effect maxes out well above it.
+     *
+     * <p>Eleron's own version is dead code — its {@code velocity.lerp(velocity, fac)} returns the input
+     * untouched whatever the factor — so this is written from the described behaviour rather than ported.
+     */
+    private static void tickCloudskipper(ServerLevel level, ServerPlayer player) {
+        int enchantLevel = FlightEnchantments.cloudskipperLevel(player);
+        if (enchantLevel <= 0 || !player.isFallFlying()) {
+            return;
+        }
+
+        double y = player.getY();
+        if (y < CLOUD_LAYER) {
+            return;
+        }
+        double altitude = Math.min((y - CLOUD_LAYER) / (CLOUDSKIPPER_CEILING - CLOUD_LAYER), 1.0);
+        double recovered = altitude * MAX_DRAG_RECOVERY * (enchantLevel / 3.0);
+
+        // Give back a slice of the horizontal speed the drag just took, rather than adding raw thrust.
+        Vec3 velocity = player.getDeltaMovement();
+        push(player, velocity.add(velocity.x * recovered, 0.0, velocity.z * recovered));
+
+        if (player.tickCount % 4 == 0) {
+            Vec3 trail = player.position().subtract(player.getLookAngle());
+            level.sendParticles(ParticleTypes.POOF, trail.x, trail.y, trail.z,
+                    1 + (int) (recovered * 40.0), 0.1, 0.1, 0.1, 0.02);
+        }
+    }
+
+    /** A rocket lit mid-glide no longer pushes; it just streams smoke behind the player for a while. */
+    private static void tickSmokeTrail(ServerLevel level, ServerPlayer player) {
+        int remaining = FlightState.smokeTrailTicks(player);
+        if (remaining <= 0) {
+            return;
+        }
+        if (!player.isFallFlying()) {
+            FlightState.setSmokeTrailTicks(player, 0);
+            return;
+        }
+        FlightState.setSmokeTrailTicks(player, remaining - 1);
+
+        if (player.tickCount % 3 == 0) {
+            Vec3 pos = player.position().subtract(player.getLookAngle());
+            level.sendParticles(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, pos.x, pos.y, pos.z, 2, 0.1, 0.1, 0.1, 0.005);
+        }
+    }
+
+    public static void startSmokeTrail(ServerPlayer player) {
+        FlightState.setSmokeTrailTicks(player, SMOKE_TRAIL_TICKS);
     }
 
     /**

@@ -1,0 +1,11 @@
+{
+    "required": true,
+    "package": "com.akitain.explorationreloaded.mixin.client.flight",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "SmokestackHudMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

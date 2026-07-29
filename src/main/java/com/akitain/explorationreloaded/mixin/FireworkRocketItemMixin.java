@@ -1,7 +1,9 @@
 package com.akitain.explorationreloaded.mixin;
 
 import com.akitain.explorationreloaded.flight.FlightRules;
+import com.akitain.explorationreloaded.flight.ElytraFlight;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -25,10 +27,16 @@ public class FireworkRocketItemMixin {
             return;
         }
         // Game rules only exist server-side; the server's result is authoritative either way.
-        if (level instanceof ServerLevel serverLevel
-                && serverLevel.getGameRules().get(FlightRules.FIREWORK_BOOSTS_FLIGHT)) {
-            return;
+        if (level instanceof ServerLevel serverLevel) {
+            if (serverLevel.getGameRules().get(FlightRules.FIREWORK_BOOSTS_FLIGHT)) {
+                return;
+            }
+            // Spent for show rather than speed: the rocket burns into a trail behind the glider.
+            if (player instanceof ServerPlayer serverPlayer) {
+                ElytraFlight.startSmokeTrail(serverPlayer);
+                player.getItemInHand(hand).consume(1, player);
+            }
         }
-        cir.setReturnValue(InteractionResult.FAIL);
+        cir.setReturnValue(InteractionResult.SUCCESS);
     }
 }
