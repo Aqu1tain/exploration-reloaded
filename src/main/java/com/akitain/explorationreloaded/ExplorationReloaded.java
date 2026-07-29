@@ -2,6 +2,7 @@ package com.akitain.explorationreloaded;
 
 import com.akitain.explorationreloaded.flight.CampfireSafety;
 import com.akitain.explorationreloaded.flight.ElytraEnchantability;
+import com.akitain.explorationreloaded.flight.FlightLoot;
 import com.akitain.explorationreloaded.flight.FlightNetworking;
 import com.akitain.explorationreloaded.flight.FlightRules;
 import com.akitain.explorationreloaded.flight.FlightState;
@@ -36,6 +37,7 @@ public class ExplorationReloaded implements ModInitializer {
         CampfireSafety.register();
         FlightNetworking.register();
         ElytraEnchantability.register();
+        FlightLoot.register();
         MapBookNetworking.register();
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(Commands.literal("mapBookMarker")
