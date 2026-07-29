@@ -1,7 +1,5 @@
 package com.akitain.explorationreloaded.flight;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -9,11 +7,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.CampfireBlock;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -33,13 +31,13 @@ public final class ElytraFlight {
      * anyone touching the ground. So the wings are re-opened every tick until the thrust has cleared it.
      */
     private static final int LAUNCH_GRACE_TICKS = 6;
-    /** Guaranteed lift on release, so you leave the fire even when looking straight ahead. */
-    private static final double LAUNCH_LIFT = 0.55;
-    /** Extra lift and burn per neighbour-equivalent of hearth under the launch pad. */
-    private static final double LIFT_PER_NEIGHBOUR = 0.12;
-    private static final int BOOST_TICKS_PER_NEIGHBOUR = 6;
+    /** Lift a lone campfire gives on release: enough to clear the block, not much more. */
+    private static final double LAUNCH_LIFT = 0.45;
+    /** Extra lift and burn per point of hearth power, so a wide signal hearth throws you far harder. */
+    private static final double LIFT_PER_POWER = 0.10;
+    private static final int BOOST_TICKS_PER_POWER = 5;
     /** A launch is a longer burn than a mid-air dash, because it has to get you off the ground. */
-    private static final int LAUNCH_BOOST_TICKS = 50;
+    private static final int LAUNCH_BOOST_TICKS = 40;
     private static final int BOOST_COOLDOWN_TICKS = 60;
     /** Ticks a player must already have been gliding before a charge may be spent. */
     private static final int BOOST_STARTUP_TICKS = 10;
@@ -130,8 +128,8 @@ public final class ElytraFlight {
         // Measured while charging, not now: by the time you stand up you may already be off the fire,
         // and reading signal_fire off a grass block throws.
         int power = FlightState.hearthPower(player);
-        double lift = LAUNCH_LIFT + LIFT_PER_NEIGHBOUR * power;
-        int burn = LAUNCH_BOOST_TICKS + BOOST_TICKS_PER_NEIGHBOUR * power;
+        double lift = LAUNCH_LIFT + LIFT_PER_POWER * power;
+        int burn = LAUNCH_BOOST_TICKS + BOOST_TICKS_PER_POWER * power;
 
         FlightState.setCharged(player, false);
         FlightState.setCampfireChargeTime(player, 0);
@@ -155,7 +153,7 @@ public final class ElytraFlight {
             return;
         }
 
-        FlightState.setHearthPower(player, hearthPower(level, player));
+        FlightState.setHearthPower(player, Hearth.power(level, player.getOnPos()));
 
         int elapsed = FlightState.campfireChargeTime(player) + 1;
         FlightState.setCampfireChargeTime(player, elapsed);
@@ -234,31 +232,6 @@ public final class ElytraFlight {
             level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 2, 0.2, 0.2, 0.2, 0.1);
             level.sendParticles(ParticleTypes.LARGE_SMOKE, pos.x, pos.y, pos.z, 3, 0.2, 0.2, 0.2, 0.1);
         }
-    }
-
-    /**
-     * How much of a hearth the player is standing on, in neighbour-equivalents. A signal fire counts as
-     * a full ring of four, which is what makes a hay bale the cheapest good launch pad.
-     */
-    private static int hearthPower(ServerLevel level, ServerPlayer player) {
-        BlockState fire = player.getBlockStateOn();
-        if (!fire.is(FlightTags.CREATES_UPDRAFT) || !fire.hasProperty(CampfireBlock.SIGNAL_FIRE)) {
-            return 0;
-        }
-        if (fire.getValue(CampfireBlock.SIGNAL_FIRE)) {
-            return 4;
-        }
-        return adjacentCampfires(level, player.getOnPos());
-    }
-
-    private static int adjacentCampfires(ServerLevel level, BlockPos pos) {
-        int neighbours = 0;
-        for (Direction side : Direction.Plane.HORIZONTAL) {
-            if (level.getBlockState(pos.relative(side)).is(FlightTags.CREATES_UPDRAFT)) {
-                neighbours++;
-            }
-        }
-        return neighbours;
     }
 
     private static void push(ServerPlayer player, Vec3 velocity) {

@@ -21,9 +21,9 @@ import net.minecraft.world.phys.Vec3;
 public final class FlightPhysics {
 
     private static final int MAX_UPDRAFT_DEPTH = 38;
-    private static final int SIGNAL_FIRE_RANGE = 24;
     private static final int CAMPFIRE_RANGE = 10;
-    private static final int RANGE_PER_NEIGHBOUR = 3;
+    /** Same hearth scale as the launch, so building wider pays off in the air too. */
+    private static final int RANGE_PER_POWER = 2;
     private static final double MAX_LIFT_SPEED = 1.0;
 
     private static final double CLOUD_LAYER = 100.0;
@@ -80,9 +80,7 @@ public final class FlightPhysics {
             return;
         }
 
-        int range = state.getValue(CampfireBlock.SIGNAL_FIRE)
-                ? SIGNAL_FIRE_RANGE
-                : CAMPFIRE_RANGE + RANGE_PER_NEIGHBOUR * adjacentCampfires(level, pos);
+        int range = CAMPFIRE_RANGE + RANGE_PER_POWER * Hearth.power(level, pos);
         double distance = Math.abs(pos.getY() - player.getY());
         if (distance <= 0 || distance > range) {
             return;
@@ -113,13 +111,4 @@ public final class FlightPhysics {
         player.setDeltaMovement(velocity.add(velocity.x * recovered, 0.0, velocity.z * recovered));
     }
 
-    private static int adjacentCampfires(Level level, BlockPos pos) {
-        int neighbours = 0;
-        for (Direction side : Direction.Plane.HORIZONTAL) {
-            if (level.getBlockState(pos.relative(side)).is(FlightTags.CREATES_UPDRAFT)) {
-                neighbours++;
-            }
-        }
-        return neighbours;
-    }
 }
