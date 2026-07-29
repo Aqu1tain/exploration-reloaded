@@ -1,17 +1,19 @@
 {
     "component.exploration-reloaded.bait": "Bait Power: %s",
-    "advancements.end.dragon_fireworks.description": "Use a Dragon Firework Rocket while flying with an Elytra",
-    "advancements.end.dragon_fireworks.title": "To Infinity, And Beyond",
     "filled_map.explorer": "%s Explorer Map",
     "filled_map.outpost": "Pillager Outpost Map",
     "filled_map.ruined_portal": "Ruined Portal Map",
     "filled_map.trail_ruins": "Trail Ruins Map",
     "item.exploration-reloaded.chainmail_horse_armor": "Chainmail Horse Armor",
-    "item.exploration-reloaded.dragon_firework_rocket": "Dragon Firework Rocket",
     "item.exploration-reloaded.map_book": "Map Book",
     "item.exploration-reloaded.map_book_empty": "Empty Map Book",
     "item.exploration-reloaded.map_book_id": "Book: %s",
     "item.exploration-reloaded.map_book_maps": "Maps: %s",
     "item.exploration-reloaded.map_book_new": "New Map Book",
-    "item.exploration-reloaded.nautilus_armor": "Nautilus Armor"
+    "item.exploration-reloaded.nautilus_armor": "Nautilus Armor",
+    "enchantment.exploration-reloaded.smokestack": "Smokestack",
+    "enchantment.exploration-reloaded.cloudskipper": "Cloudskipper",
+    "gamerule.fireworkBoostsFlight": "Fireworks boost elytra flight",
+    "gamerule.campfireUpdrafts": "Campfires create updrafts",
+    "gamerule.smokestackChargeTicks": "Ticks per Smokestack charge"
 }

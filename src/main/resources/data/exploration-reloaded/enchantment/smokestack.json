@@ -1,0 +1,21 @@
+{
+  "description": {
+    "translate": "enchantment.exploration-reloaded.smokestack"
+  },
+  "supported_items": "#minecraft:enchantable/equippable",
+  "primary_items": "minecraft:elytra",
+  "weight": 2,
+  "max_level": 3,
+  "min_cost": {
+    "base": 20,
+    "per_level_above_first": 9
+  },
+  "max_cost": {
+    "base": 55,
+    "per_level_above_first": 9
+  },
+  "anvil_cost": 4,
+  "slots": ["chest"],
+  "exclusive_set": "#exploration-reloaded:exclusive_set/glider",
+  "effects": {}
+}
