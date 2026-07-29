@@ -1,17 +1,23 @@
 {
     "component.exploration-reloaded.bait": "Bait Power: %s",
-    "advancements.end.dragon_fireworks.description": "Use a Dragon Firework Rocket while flying with an Elytra",
-    "advancements.end.dragon_fireworks.title": "To Infinity, And Beyond",
     "filled_map.explorer": "%s Explorer Map",
     "filled_map.outpost": "Pillager Outpost Map",
     "filled_map.ruined_portal": "Ruined Portal Map",
     "filled_map.trail_ruins": "Trail Ruins Map",
     "item.exploration-reloaded.chainmail_horse_armor": "Chainmail Horse Armor",
-    "item.exploration-reloaded.dragon_firework_rocket": "Dragon Firework Rocket",
     "item.exploration-reloaded.map_book": "Map Book",
     "item.exploration-reloaded.map_book_empty": "Empty Map Book",
     "item.exploration-reloaded.map_book_id": "Book: %s",
     "item.exploration-reloaded.map_book_maps": "Maps: %s",
     "item.exploration-reloaded.map_book_new": "New Map Book",
-    "item.exploration-reloaded.nautilus_armor": "Nautilus Armor"
+    "item.exploration-reloaded.nautilus_armor": "Nautilus Armor",
+    "enchantment.exploration-reloaded.smokestack": "Smokestack",
+    "enchantment.exploration-reloaded.cloudskipper": "Cloudskipper",
+    "enchantment.exploration-reloaded.smokestack.desc": "Crouch on a lit campfire to store its smoke, then spend a charge mid-flight for a burst of speed.",
+    "enchantment.exploration-reloaded.cloudskipper.desc": "Air resistance fades the higher you fly, letting you glide far further above the clouds.",
+    "key.exploration-reloaded.smokestack_boost": "Smokestack boost",
+    "key.exploration-reloaded.fold_wings": "Fold wings",
+    "gamerule.exploration-reloaded:firework_boosts_flight": "Fireworks boost elytra flight",
+    "gamerule.exploration-reloaded:campfire_updrafts": "Campfires create updrafts",
+    "gamerule.exploration-reloaded:smokestack_charge_ticks": "Ticks per Smokestack charge"
 }

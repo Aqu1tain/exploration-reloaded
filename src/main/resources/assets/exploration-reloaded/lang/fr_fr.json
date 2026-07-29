@@ -1,0 +1,23 @@
+{
+    "component.exploration-reloaded.bait": "Pouvoir d'appât : %s",
+    "filled_map.explorer": "Carte d'explorateur : %s",
+    "filled_map.outpost": "Carte d'avant-poste pillard",
+    "filled_map.ruined_portal": "Carte de portail en ruine",
+    "filled_map.trail_ruins": "Carte de ruines du sentier",
+    "item.exploration-reloaded.chainmail_horse_armor": "Armure de cheval en mailles",
+    "item.exploration-reloaded.map_book": "Atlas",
+    "item.exploration-reloaded.map_book_empty": "Atlas vide",
+    "item.exploration-reloaded.map_book_id": "Atlas : %s",
+    "item.exploration-reloaded.map_book_maps": "Cartes : %s",
+    "item.exploration-reloaded.map_book_new": "Nouvel atlas",
+    "item.exploration-reloaded.nautilus_armor": "Armure de nautile",
+    "enchantment.exploration-reloaded.smokestack": "Cheminée",
+    "enchantment.exploration-reloaded.cloudskipper": "Effleure-nuages",
+    "enchantment.exploration-reloaded.smokestack.desc": "Accroupissez-vous sur un feu de camp allumé pour emmagasiner sa fumée, puis dépensez une charge en vol pour une accélération.",
+    "enchantment.exploration-reloaded.cloudskipper.desc": "La résistance de l'air diminue à mesure que vous montez, ce qui allonge considérablement le vol plané au-dessus des nuages.",
+    "key.exploration-reloaded.smokestack_boost": "Poussée de cheminée",
+    "key.exploration-reloaded.fold_wings": "Replier les ailes",
+    "gamerule.exploration-reloaded:firework_boosts_flight": "Les fusées propulsent en vol plané",
+    "gamerule.exploration-reloaded:campfire_updrafts": "Les feux de camp créent des ascendances",
+    "gamerule.exploration-reloaded:smokestack_charge_ticks": "Ticks par charge de cheminée"
+}

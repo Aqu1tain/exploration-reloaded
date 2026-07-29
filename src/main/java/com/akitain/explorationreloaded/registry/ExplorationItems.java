@@ -18,9 +18,6 @@ import java.util.List;
 import java.util.function.Function;
 
 public final class ExplorationItems {
-    public static final Item DRAGON_FIREWORK_ROCKET = register("dragon_firework_rocket", FireworkRocketItem::new, new Item.Properties()
-            .useCooldown(1.0F)
-            .component(DataComponents.FIREWORKS, new Fireworks(1, List.of())));
     public static final Item MAP_BOOK = register("map_book", MapBookItem::new, new Item.Properties().stacksTo(16));
     public static final Item CHAINMAIL_HORSE_ARMOR = register("chainmail_horse_armor", new Item.Properties().horseArmor(ArmorMaterials.CHAINMAIL));
     public static final Item NAUTILUS_ARMOR = register("nautilus_armor", new Item.Properties().nautilusArmor(ArmorMaterials.ARMADILLO_SCUTE));
@@ -29,7 +26,6 @@ public final class ExplorationItems {
     }
 
     public static void register() {
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> entries.insertAfter(Items.FIREWORK_ROCKET, DRAGON_FIREWORK_ROCKET));
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> entries.insertAfter(Items.MAP, MAP_BOOK));
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> entries.insertAfter(Items.LEATHER_HORSE_ARMOR, CHAINMAIL_HORSE_ARMOR));
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries -> entries.insertAfter(Items.TURTLE_HELMET, NAUTILUS_ARMOR));

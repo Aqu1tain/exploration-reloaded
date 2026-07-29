@@ -4,21 +4,33 @@
     "version": "${version}",
     "name": "Exploration Reloaded",
     "description": "Exploration maps, Map Book, travel mobs, fishing, sniffer loot, and traversal tweaks extracted from Fixed Minecraft.",
-    "authors": ["Aqu1tain"],
-    "contributors": ["green_jab"],
+    "authors": [
+        "Aqu1tain"
+    ],
+    "contributors": [
+        "green_jab"
+    ],
     "contact": {
         "sources": "https://github.com/Aqu1tain/exploration-reloaded"
     },
     "license": "LGPL-3.0-only",
     "environment": "*",
     "entrypoints": {
-        "main": ["com.akitain.explorationreloaded.ExplorationReloaded"],
-        "client": ["com.akitain.explorationreloaded.ExplorationReloadedClient"]
+        "main": [
+            "com.akitain.explorationreloaded.ExplorationReloaded"
+        ],
+        "client": [
+            "com.akitain.explorationreloaded.ExplorationReloadedClient"
+        ]
     },
     "mixins": [
         "exploration-reloaded.mixins.json",
         {
             "config": "exploration-reloaded.client.mixins.json",
+            "environment": "client"
+        },
+        {
+            "config": "exploration-reloaded.flight.client.mixins.json",
             "environment": "client"
         }
     ],
