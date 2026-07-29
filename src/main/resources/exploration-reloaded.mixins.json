@@ -23,7 +23,6 @@
         "EyeOfEnderEntityMixin",
         "FishingBobberEntityMixin",
         "FireworkRocketItemMixin",
-        "CampfireChargingMixin",
         "PlayerFlightTickMixin",
         "FormCaravanGoalMixin",
         "HorseLivingEntityMixin",
